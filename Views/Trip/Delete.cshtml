@@ -1,0 +1,24 @@
+@model TransportationManagement.Models.Trip
+@{
+    ViewData["Title"] = "Delete Trip";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-trash me-2 text-danger"></i>Delete Trip</h3>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>Delete trip from <strong>@Model.origin</strong> to <strong>@Model.destination</strong>?
+        </div>
+        
+        <form asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.tripId" />
+            <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-1"></i>Yes, Delete</button>
+            <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
+</div>

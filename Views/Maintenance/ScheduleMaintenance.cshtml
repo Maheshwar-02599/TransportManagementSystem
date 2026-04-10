@@ -1,0 +1,28 @@
+@model TransportationManagement.Models.MaintenanceRecord
+@{ ViewData["Title"] = "Schedule Maintenance"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-calendar-check me-2"></i>Schedule Maintenance</h3>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card"><div class="card-body">
+    <form asp-action="ScheduleMaintenance" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <div class="row">
+            <div class="col-md-6 mb-3"><label asp-for="vehicleId" class="form-label fw-semibold">Vehicle</label>
+                <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select"><option value="">-- Select Vehicle --</option></select>
+                <span asp-validation-for="vehicleId" class="text-danger small"></span></div>
+            <div class="col-md-6 mb-3"><label asp-for="serviceType" class="form-label fw-semibold">Service Type</label>
+                <input asp-for="serviceType" class="form-control" placeholder="e.g. Oil Change, Tyre Check" />
+                <span asp-validation-for="serviceType" class="text-danger small"></span></div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3"><label asp-for="serviceDate" class="form-label fw-semibold">Service Date</label>
+                <input asp-for="serviceDate" type="date" class="form-control" />
+                <span asp-validation-for="serviceDate" class="text-danger small"></span></div>
+            <div class="col-md-6 mb-3"><label asp-for="remarks" class="form-label fw-semibold">Remarks</label>
+                <input asp-for="remarks" class="form-control" placeholder="Optional notes" /></div>
+        </div>
+        <button type="submit" class="btn btn-danger"><i class="fas fa-save me-1"></i>Schedule</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div></div>

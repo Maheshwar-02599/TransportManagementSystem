@@ -1,0 +1,89 @@
+@model TransportationManagement.ViewModels.AdminDashboardViewModel
+@{ ViewData["Title"] = "Admin Dashboard"; }
+
+<h3 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="stat-card text-center ">
+            <i class="fas fa-car stat-icon"></i>
+            <h3>@Model.TotalVehicles</h3>
+            <p>Vehicles</p>
+            <a asp-controller="Vehicle" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card text-center">
+            <i class="fas fa-id-card stat-icon"></i>
+            <h3>@Model.TotalDrivers</h3>
+            <p>Drivers</p>
+            <a asp-controller="Driver" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card text-center">
+            <i class="fas fa-route stat-icon"></i>
+            <h3>@Model.TotalTrips</h3>
+            <p>Trips</p>
+            <a asp-controller="Trip" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card text-center">
+            <i class="fas fa-wrench stat-icon"></i>
+            <h3>@Model.TotalMaintenance</h3>
+            <p>Maintenance</p>
+            <a asp-controller="Maintenance" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card text-center">
+            <i class="fas fa-gas-pump stat-icon"></i>
+            <h3>@Model.TotalFuelEntries</h3>
+            <p>Fuel Entries</p>
+            <a asp-controller="Fuel" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-card text-center">
+            <i class="fas fa-users stat-icon"></i>
+            <h3>@Model.TotalUsers</h3>
+            <p>Users</p>
+            <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary btn-sm mt-2">View</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white fw-bold"><i class="fas fa-bolt me-2"></i>Quick Actions</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-controller="Admin" asp-action="CreateUser" class="btn btn-outline-dark btn-sm"><i class="fas fa-user-plus me-1"></i>Add User</a>
+                    <a asp-controller="Vehicle" asp-action="AddVehicle" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Add Vehicle</a>
+                    <a asp-controller="Driver" asp-action="AddDriver" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Add Driver</a>
+                    <a asp-controller="Trip" asp-action="CreateTrip" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>New Trip</a>
+                    <a asp-controller="Maintenance" asp-action="ScheduleMaintenance" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Schedule Maintenance</a>
+                    <a asp-controller="Fuel" asp-action="AddFuelEntry" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Add Fuel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white"><i class="fas fa-info-circle me-2"></i>Roles & Access</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>Role</th><th>Access</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="badge bg-primary">Admin</span></td><td>Full access to everything</td></tr>
+                        <tr><td><span class="badge bg-secondary">FleetManager</span></td><td>Vehicles, Drivers, Trips, Fuel, Maintenance</td></tr>
+                        <tr><td><span class="badge bg-light text-dark">Driver</span></td><td>View & update trips only</td></tr>
+                        <tr><td><span class="badge bg-dark">MaintenanceEngineer</span></td><td>Maintenance records only</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,19 @@
+@model IEnumerable<TransportationManagement.Models.Trip>
+@{ ViewData["Title"] = "Assigned Trips"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-route me-2"></i>Assigned Trips</h3>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card"><div class="card-body p-0">
+    <table class="table table-striped table-hover mb-0">
+        <thead class="table-dark"><tr><th>#</th><th>Origin</th><th>Destination</th><th>Vehicle</th><th>Status</th></tr></thead>
+        <tbody>
+        @{ int i=1; }
+        @foreach(var t in Model){
+        <tr><td>@i++</td><td>@t.origin</td><td>@t.destination</td><td>@(t.Vehicle?.vehicleNumber??"-")</td>
+            <td><span class="badge @(t.tripStatus==TripStatus.PLANNED?"bg-success":t.tripStatus==TripStatus.IN_PROGRESS?"bg-warning text-dark":"bg-info")">@t.tripStatus</span></td>
+        </tr>}
+        @if(!Model.Any()){<tr><td colspan="5" class="text-center text-muted py-3">No trips assigned.</td></tr>}
+        </tbody>
+    </table>
+</div></div>

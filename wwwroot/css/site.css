@@ -1,0 +1,6 @@
+/* Basic overrides - rest comes from Bootstrap */
+body { background-color: #f8f9fa; }
+.navbar-brand { letter-spacing: 0.5px; }
+.card { border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.08); border-radius: 8px; }
+.table thead th { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.4px; }
+.badge { font-size: 0.78rem; }

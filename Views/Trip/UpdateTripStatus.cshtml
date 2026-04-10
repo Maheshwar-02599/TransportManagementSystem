@@ -1,0 +1,56 @@
+@model TransportationManagement.Models.Trip
+@{
+    ViewData["Title"] = "Update Trip Status";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-edit me-2"></i>Update Trip</h3>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="UpdateTripStatus" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            
+            <input type="hidden" asp-for="tripId" />
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="vehicleId" class="form-label fw-semibold">Vehicle</label>
+                    <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select"></select>
+                    <span asp-validation-for="vehicleId" class="text-danger small fw-bold"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="driverId" class="form-label fw-semibold">Driver</label>
+                    <select asp-for="driverId" asp-items="ViewBag.Drivers" class="form-select"></select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="origin" class="form-label fw-semibold">Origin</label>
+                    <input asp-for="origin" class="form-control" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="destination" class="form-label fw-semibold">Destination</label>
+                    <input asp-for="destination" class="form-control" />
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label asp-for="plannedRoute" class="form-label fw-semibold">Planned Route</label>
+                <textarea asp-for="plannedRoute" class="form-control" rows="3"></textarea>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label asp-for="tripStatus" class="form-label fw-semibold">Trip Status</label>
+                <select asp-for="tripStatus" class="form-select" asp-items="Html.GetEnumSelectList<TripStatus>()"></select>
+            </div>
+            
+            <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>Update Trip</button>
+            <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
+</div>

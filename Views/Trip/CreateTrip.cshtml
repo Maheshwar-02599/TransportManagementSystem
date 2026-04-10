@@ -1,0 +1,33 @@
+@model TransportationManagement.Models.Trip
+@{ ViewData["Title"] = "Create Trip"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-plus-circle me-2"></i>Create New Trip</h3>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card"><div class="card-body">
+    <form asp-action="CreateTrip" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <div class="row">
+            <div class="col-md-6 mb-3"><label asp-for="vehicleId" class="form-label fw-semibold">Vehicle</label>
+                <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select"><option value="">-- Select Vehicle --</option></select>
+                <span asp-validation-for="vehicleId" class="text-danger small"></span></div>
+            <div class="col-md-6 mb-3"><label asp-for="driverId" class="form-label fw-semibold">Driver</label>
+                <select asp-for="driverId" asp-items="ViewBag.Drivers" class="form-select"><option value="">-- Select Driver --</option></select>
+                <span asp-validation-for="driverId" class="text-danger small"></span></div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3"><label asp-for="origin" class="form-label fw-semibold">Origin</label>
+                <input asp-for="origin" class="form-control" placeholder="Starting location" /><span asp-validation-for="origin" class="text-danger small"></span></div>
+            <div class="col-md-6 mb-3"><label asp-for="destination" class="form-label fw-semibold">Destination</label>
+                <input asp-for="destination" class="form-control" placeholder="End location" /><span asp-validation-for="destination" class="text-danger small"></span></div>
+        </div>
+        <div class="mb-3"><label asp-for="plannedRoute" class="form-label fw-semibold">Planned Route (Text Description)</label>
+            <textarea asp-for="plannedRoute" class="form-control" rows="3" placeholder="Describe the route..."></textarea></div>
+        <div class="col-md-4 mb-3">
+            <label asp-for="tripStatus" class="form-label fw-semibold">Status</label>
+            <select asp-for="tripStatus"  class="form-control" asp-items="Html.GetEnumSelectList<TripStatus>()"></select></div>
+        <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>Create Trip</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div></div>

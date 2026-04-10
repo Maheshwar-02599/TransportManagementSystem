@@ -1,0 +1,33 @@
+@{ ViewData["Title"] = "Home"; string role = Context.Session.GetString("Role") ?? ""; }
+<div class="text-center mt-5">
+    <i class="fas fa-truck-moving fa-5x text-dark mb-3"></i>
+    <h2>Smart Transportation & Fleet Management System</h2>
+    <p class="text-muted">Welcome, <strong>@Context.Session.GetString("Username")</strong> &nbsp; <span class="badge bg-secondary">@role</span></p>
+    <hr />
+    <div class="row justify-content-center mt-4 g-3">
+        @if (role == "Driver") {
+            <div class="col-md-3">
+                <div class="card text-center p-4 shadow-sm">
+                    <i class="fas fa-route fa-3x text-primary mb-2"></i>
+                    <h5>My Trips</h5>
+                    <a asp-controller="Trip" asp-action="Index" class="btn btn-primary mt-2">View Trips</a>
+                </div>
+            </div>
+        }
+        @if (role == "MaintenanceEngineer") {
+            <div class="col-md-3">
+                <div class="card text-center p-4 shadow-sm">
+                    <i class="fas fa-wrench fa-3x text-danger mb-2"></i>
+                    <h5>Maintenance</h5>
+                    <a asp-controller="Maintenance" asp-action="Index" class="btn btn-danger mt-2">View Records</a>
+                </div>
+            </div>
+        }
+        @if (role == "FleetManager") {
+            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-car fa-2x text-primary mb-2"></i><h6>Vehicles</h6><a asp-controller="Vehicle" asp-action="Index" class="btn btn-outline-primary btn-sm">Open</a></div></div>
+            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-id-card fa-2x text-success mb-2"></i><h6>Drivers</h6><a asp-controller="Driver" asp-action="Index" class="btn btn-outline-success btn-sm">Open</a></div></div>
+            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-route fa-2x text-warning mb-2"></i><h6>Trips</h6><a asp-controller="Trip" asp-action="Index" class="btn btn-outline-warning btn-sm">Open</a></div></div>
+            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-gas-pump fa-2x text-info mb-2"></i><h6>Fuel</h6><a asp-controller="Fuel" asp-action="Index" class="btn btn-outline-info btn-sm">Open</a></div></div>
+        }
+    </div>
+</div>

@@ -1,0 +1,13 @@
+@model TransportationManagement.Models.FuelEntry
+@{ ViewData["Title"] = "Delete Fuel Entry"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-trash me-2 text-danger"></i>Delete Fuel Entry</h3>
+    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card"><div class="card-body">
+    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Delete fuel entry of <strong>@Model.fuelQuantity L</strong> on @Model.entryDate.ToString("dd-MM-yyyy")?</div>
+    <form asp-action="Delete" method="post"><input type="hidden" name="id" value="@Model.fuelId" />
+        <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-1"></i>Yes, Delete</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div></div>
