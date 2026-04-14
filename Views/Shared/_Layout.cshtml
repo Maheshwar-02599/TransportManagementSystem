@@ -140,35 +140,38 @@
                             </li>
                         }
  
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Vehicle" asp-action="Index">
-                                <i class="fas fa-car me-1"></i>Vehicles
-                            </a>
-                        </li>
- 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Driver" asp-action="Index">
-                                <i class="fas fa-id-card me-1"></i>Drivers
-                            </a>
-                        </li>
- 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Trip" asp-action="Index">
-                                <i class="fas fa-route me-1"></i>Trips
-                            </a>
-                        </li>
- 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Maintenance" asp-action="Index">
-                                <i class="fas fa-wrench me-1"></i>Maintenance
-                            </a>
-                        </li>
- 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Fuel" asp-action="Index">
-                                <i class="fas fa-gas-pump me-1"></i>Fuel
-                            </a>
-                        </li>
+                        @if (role != "Driver")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Vehicle" asp-action="Index">
+                                    <i class="fas fa-car me-1"></i>Vehicles
+                                </a>
+                            </li>
+     
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Driver" asp-action="Index">
+                                    <i class="fas fa-id-card me-1"></i>Drivers
+                                </a>
+                            </li>
+     
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Trip" asp-action="Index">
+                                    <i class="fas fa-route me-1"></i>Trips
+                                </a>
+                            </li>
+     
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Maintenance" asp-action="Index">
+                                    <i class="fas fa-wrench me-1"></i>Maintenance
+                                </a>
+                            </li>
+     
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Fuel" asp-action="Index">
+                                    <i class="fas fa-gas-pump me-1"></i>Fuel
+                                </a>
+                            </li>
+                        }
  
                     </ul>
  

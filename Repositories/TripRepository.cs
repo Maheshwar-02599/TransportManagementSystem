@@ -14,7 +14,7 @@ namespace TransportationManagement.Repositories
 
 		public Trip? GetTripById(int tripId) => _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).FirstOrDefault(t => t.tripId == tripId);
 
-		public List<Trip> GetTripsByDriverId(int driverId) => _context.Trips.Include(t => t.Vehicle).Where(t => t.driverId == driverId).ToList();
+		public List<Trip> GetTripsByDriverId(int driverId) => _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).Where(t => t.driverId == driverId).ToList();
 
 		public void AddTrip(Trip tripDetails)
 		{

@@ -141,5 +141,34 @@ namespace TransportationManagement.Controllers
 
 			return View(record);
 		}
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public IActionResult CompleteMaintenance(int id)
+		{
+			if (!CanEdit()) return RedirectToAction("Index"); // FleetManager or MaintenanceEngineer
+
+			var record = _maintenanceService.GetMaintenanceById(id);
+			if (record != null)
+			{
+				// 1. FREEZE THE RECORD: Safely append a hidden completed flag to the remarks
+				if (string.IsNullOrEmpty(record.remarks))
+					record.remarks = "[COMPLETED]";
+				else if (!record.remarks.Contains("[COMPLETED]"))
+					record.remarks += " [COMPLETED]";
+
+				_maintenanceService.UpdateServiceRecord(record);
+
+				// 2. FREE THE VEHICLE: Find the vehicle and set it back to ACTIVE!
+				var fleetVehicle = _vehicleService.GetVehicleDetails(record.vehicleId);
+				if (fleetVehicle != null && fleetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
+				{
+					fleetVehicle.vehiclestatus = VehicleStatus.ACTIVE;
+					_vehicleService.UpdateVehicle(fleetVehicle);
+				}
+
+				TempData["Success"] = "Service completed! Record frozen and Vehicle is now ACTIVE.";
+			}
+			return RedirectToAction("Index");
+		}
 	}
 }
