@@ -1,33 +1,68 @@
 @model TransportationManagement.Models.Trip
-@{ ViewData["Title"] = "Create Trip"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="fas fa-plus-circle me-2"></i>Create New Trip</h3>
-    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+@{
+    ViewData["Title"] = "Create Trip";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-2 me-3 shadow-sm">
+            <i class="fas fa-plus-circle fa-lg px-1"></i>
+        </div>
+        <h3 class="fw-bold mb-0">Create New Trip</h3>
+    </div>
+    <a asp-action="Index" class="btn btn-light shadow-sm rounded-pill px-3"><i class="fas fa-arrow-left me-2"></i>Back</a>
 </div>
-<div class="card"><div class="card-body">
-    <form asp-action="CreateTrip" method="post">
-        @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
-        <div class="row">
-            <div class="col-md-6 mb-3"><label asp-for="vehicleId" class="form-label fw-semibold">Vehicle</label>
-                <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select"><option value="">-- Select Vehicle --</option></select>
-                <span asp-validation-for="vehicleId" class="text-danger small"></span></div>
-            <div class="col-md-6 mb-3"><label asp-for="driverId" class="form-label fw-semibold">Driver</label>
-                <select asp-for="driverId" asp-items="ViewBag.Drivers" class="form-select"><option value="">-- Select Driver --</option></select>
-                <span asp-validation-for="driverId" class="text-danger small"></span></div>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3"><label asp-for="origin" class="form-label fw-semibold">Origin</label>
-                <input asp-for="origin" class="form-control" placeholder="Starting location" /><span asp-validation-for="origin" class="text-danger small"></span></div>
-            <div class="col-md-6 mb-3"><label asp-for="destination" class="form-label fw-semibold">Destination</label>
-                <input asp-for="destination" class="form-control" placeholder="End location" /><span asp-validation-for="destination" class="text-danger small"></span></div>
-        </div>
-        <div class="mb-3"><label asp-for="plannedRoute" class="form-label fw-semibold">Planned Route (Text Description)</label>
-            <textarea asp-for="plannedRoute" class="form-control" rows="3" placeholder="Describe the route..."></textarea></div>
-        <div class="col-md-4 mb-3">
-            <label asp-for="tripStatus" class="form-label fw-semibold">Status</label>
-            <select asp-for="tripStatus"  class="form-control" asp-items="Html.GetEnumSelectList<TripStatus>()"></select></div>
-        <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>Create Trip</button>
-        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
-    </form>
-</div></div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-5">
+        <form asp-action="CreateTrip" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 rounded-3 border-0"></div>
+            
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="vehicleId" class="form-label fw-semibold text-secondary small text-uppercase">Vehicle</label>
+                    <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select bg-light border-0 rounded-3 py-2">
+                        <option value="">-- Select Vehicle --</option>
+                    </select>
+                    <span asp-validation-for="vehicleId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="driverId" class="form-label fw-semibold text-secondary small text-uppercase">Driver</label>
+                    <select asp-for="driverId" asp-items="ViewBag.Drivers" class="form-select bg-light border-0 rounded-3 py-2">
+                        <option value="">-- Select Driver --</option>
+                    </select>
+                    <span asp-validation-for="driverId" class="text-danger small"></span>
+                </div>
+            </div>
+            
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="origin" class="form-label fw-semibold text-secondary small text-uppercase">Origin</label>
+                    <input asp-for="origin" class="form-control bg-light border-0 rounded-3 py-2" placeholder="Starting location" />
+                    <span asp-validation-for="origin" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="destination" class="form-label fw-semibold text-secondary small text-uppercase">Destination</label>
+                    <input asp-for="destination" class="form-control bg-light border-0 rounded-3 py-2" placeholder="End location" />
+                    <span asp-validation-for="destination" class="text-danger small"></span>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label asp-for="plannedRoute" class="form-label fw-semibold text-secondary small text-uppercase">Planned Route (Text Description)</label>
+                <textarea asp-for="plannedRoute" class="form-control bg-light border-0 rounded-3 py-2" rows="3" placeholder="Describe the route..."></textarea>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <label asp-for="tripStatus" class="form-label fw-semibold text-secondary small text-uppercase">Status</label>
+                <select asp-for="tripStatus" class="form-select bg-light border-0 rounded-3 py-2" asp-items="Html.GetEnumSelectList<TripStatus>()"></select>
+            </div>
+            
+            <div class="mt-5 pt-3 border-top">
+                <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm"><i class="fas fa-save me-2"></i>Create Trip</button>
+                <a asp-action="Index" class="btn btn-link text-muted text-decoration-none ms-3">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

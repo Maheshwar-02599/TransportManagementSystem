@@ -91,11 +91,20 @@ namespace TransportationManagement.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult GetAssignedTrips(int id)
+		public IActionResult GetAssignedTrips(int id) // 'id' is the driverId passed from the Index
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
-			var trips = _tripService.GetAssignedTrips(id);
+
+			// Fetch only trips belonging to this specific driverId
+			var trips = _tripService.GetAllTrips()
+									.Where(t => t.driverId == id)
+									.ToList();
+
+			// Get driver details for the page heading
+			var driverInfo = _driverService.GetDriverDetails(id);
+			ViewBag.DriverName = driverInfo?.name ?? "Driver";
 			ViewBag.DriverId = id;
+
 			return View(trips);
 		}
 

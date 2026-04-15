@@ -1,17 +1,57 @@
 @model TransportationManagement.Models.Trip
-@{ ViewData["Title"] = "Trip Plan"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="fas fa-route me-2"></i>Trip Plan Details</h3>
-    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+@{
+    ViewData["Title"] = "Trip Plan";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <div class="bg-info bg-opacity-10 text-info rounded-3 p-2 me-3 shadow-sm">
+            <i class="fas fa-map-marked-alt fa-lg px-1"></i>
+        </div>
+        <h3 class="fw-bold mb-0">Trip Plan Details</h3>
+    </div>
+    <a asp-action="Index" class="btn btn-light shadow-sm rounded-pill px-3"><i class="fas fa-arrow-left me-2"></i>Back</a>
 </div>
-<div class="card"><div class="card-body">
-    <dl class="row">
-        <dt class="col-sm-3">Trip ID</dt><dd class="col-sm-9">@Model.tripId</dd>
-        <dt class="col-sm-3">Vehicle</dt><dd class="col-sm-9">@(Model.Vehicle?.vehicleNumber??"-")</dd>
-        <dt class="col-sm-3">Driver</dt><dd class="col-sm-9">@(Model.Driver?.name??"-")</dd>
-        <dt class="col-sm-3">Origin</dt><dd class="col-sm-9">@Model.origin</dd>
-        <dt class="col-sm-3">Destination</dt><dd class="col-sm-9">@Model.destination</dd>
-        <dt class="col-sm-3">Planned Route</dt><dd class="col-sm-9">@(Model.plannedRoute??"Not specified")</dd>
-        <dt class="col-sm-3">Status</dt><dd class="col-sm-9"><span class="badge @(Model.tripStatus==TripStatus.COMPLETED?"bg-success":Model.tripStatus==TripStatus.IN_PROGRESS?"bg-warning text-dark":"bg-info")">@Model.tripStatus</span></dd>
-    </dl>
-</div></div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-5">
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase">Trip ID</div>
+            <div class="col-md-9 text-dark">@Model.tripId</div>
+        </div>
+        
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase">Vehicle Number</div>
+            <div class="col-md-9 fw-semibold text-dark font-monospace">@(Model.Vehicle?.vehicleNumber ?? "-")</div>
+        </div>
+
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase">Driver Name</div>
+            <div class="col-md-9 fw-semibold text-dark">@(Model.Driver?.name ?? "-")</div>
+        </div>
+
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase">Origin</div>
+            <div class="col-md-9 text-dark">@Model.origin</div>
+        </div>
+
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase">Destination</div>
+            <div class="col-md-9 text-dark">@Model.destination</div>
+        </div>
+        
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase">Planned Route</div>
+            <div class="col-md-9 text-muted fst-italic">@(Model.plannedRoute ?? "Not specified")</div>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-md-3 fw-bold text-secondary small text-uppercase align-self-center">Status</div>
+            <div class="col-md-9">
+                <span class="badge rounded-pill @(Model.tripStatus == TripStatus.COMPLETED ? "bg-success" : Model.tripStatus == TripStatus.IN_PROGRESS ? "bg-warning text-dark" : "bg-info") fs-6 px-3 py-2">
+                    @Model.tripStatus
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

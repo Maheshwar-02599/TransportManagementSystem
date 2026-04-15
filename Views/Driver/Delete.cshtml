@@ -1,14 +1,32 @@
 @model TransportationManagement.Models.Driver
-@{ ViewData["Title"] = "Delete Driver"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="fas fa-trash me-2 text-danger"></i>Delete Driver</h3>
-    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+@{
+    ViewData["Title"] = "Delete Driver";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2 me-3 shadow-sm">
+            <i class="fas fa-trash fa-lg px-1"></i>
+        </div>
+        <h3 class="fw-bold mb-0">Delete Driver</h3>
+    </div>
+    <a asp-action="Index" class="btn btn-light shadow-sm rounded-pill px-3"><i class="fas fa-arrow-left me-2"></i>Back</a>
 </div>
-<div class="card"><div class="card-body">
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Delete driver <strong>@Model.name</strong>?</div>
-    <form asp-action="Delete" method="post">
-        <input type="hidden" name="id" value="@Model.driverId" />
-        <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-1"></i>Yes, Delete</button>
-        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
-    </form>
-</div></div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-5 text-center">
+        <div class="mb-4">
+            <i class="fas fa-exclamation-circle text-danger fa-4x opacity-75"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-3">Are you sure?</h4>
+        <p class="text-muted mb-4">You are about to delete the driver <strong>@Model.name</strong>. This action cannot be undone.</p>
+        
+        <form asp-action="Delete" method="post">
+            <input type="hidden" name="id" value="@Model.driverId" />
+            <div class="d-flex justify-content-center gap-3">
+                <a asp-action="Index" class="btn btn-light rounded-pill px-4 shadow-sm">Cancel</a>
+                <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm"><i class="fas fa-trash me-2"></i>Yes, Delete</button>
+            </div>
+        </form>
+    </div>
+</div>

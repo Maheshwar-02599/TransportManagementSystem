@@ -3,41 +3,50 @@
     ViewData["Title"] = "Update Service Record";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="fas fa-edit me-2"></i>Update Service Record</h3>
-    <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-2 me-3 shadow-sm">
+            <i class="fas fa-edit fa-lg px-1"></i>
+        </div>
+        <h3 class="fw-bold mb-0">Update Service Record</h3>
+    </div>
+    <a asp-action="Index" class="btn btn-light shadow-sm rounded-pill px-3"><i class="fas fa-arrow-left me-2"></i>Back</a>
 </div>
 
-<div class="card">
-    <div class="card-body">
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-5">
         <form asp-action="UpdateServiceRecord" method="post">
-            
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 rounded-3 border-0"></div>
             
             <input type="hidden" asp-for="maintenanceId" />
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="vehicleId" class="form-label fw-semibold">Vehicle</label>
-                    <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select"></select>
+            
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="vehicleId" class="form-label fw-semibold text-secondary small text-uppercase">Vehicle</label>
+                    <select asp-for="vehicleId" asp-items="ViewBag.Vehicles" class="form-select bg-light border-0 rounded-3 py-2"></select>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="serviceType" class="form-label fw-semibold">Service Type</label>
-                    <input asp-for="serviceType" class="form-control" />
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="serviceDate" class="form-label fw-semibold">Service Date</label>
-                    <input asp-for="serviceDate" type="date" class="form-control" />
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="remarks" class="form-label fw-semibold">Remarks</label>
-                    <input asp-for="remarks" class="form-control" />
+                <div class="col-md-6">
+                    <label asp-for="serviceType" class="form-label fw-semibold text-secondary small text-uppercase">Service Type</label>
+                    <input asp-for="serviceType" class="form-control bg-light border-0 rounded-3 py-2" />
                 </div>
             </div>
-            <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>Update Record</button>
-            <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label asp-for="serviceDate" class="form-label fw-semibold text-secondary small text-uppercase">Service Date</label>
+                    <input asp-for="serviceDate" type="date" class="form-control bg-light border-0 rounded-3 py-2" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="remarks" class="form-label fw-semibold text-secondary small text-uppercase">Remarks</label>
+                    <input asp-for="remarks" class="form-control bg-light border-0 rounded-3 py-2" />
+                </div>
+            </div>
+            
+            <div class="mt-5 pt-3 border-top">
+                <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm"><i class="fas fa-save me-2"></i>Update Record</button>
+                <a asp-action="Index" class="btn btn-link text-muted text-decoration-none ms-3">Cancel</a>
+            </div>
         </form>
     </div>
 </div>

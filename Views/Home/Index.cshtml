@@ -1,33 +1,100 @@
-@{ ViewData["Title"] = "Home"; string role = Context.Session.GetString("Role") ?? ""; }
-<div class="text-center mt-5">
-    <i class="fas fa-truck-moving fa-5x text-dark mb-3"></i>
-    <h2>Smart Transportation & Fleet Management System</h2>
-    <p class="text-muted">Welcome, <strong>@Context.Session.GetString("Username")</strong> &nbsp; <span class="badge bg-secondary">@role</span></p>
-    <hr />
-    <div class="row justify-content-center mt-4 g-3">
-        @if (role == "Driver") {
-            <div class="col-md-3">
-                <div class="card text-center p-4 shadow-sm">
-                    <i class="fas fa-route fa-3x text-primary mb-2"></i>
-                    <h5>My Trips</h5>
-                    <a asp-controller="Trip" asp-action="Index" class="btn btn-primary mt-2">View Trips</a>
+@{
+    ViewData["Title"] = "Home";
+    string role = Context.Session.GetString("Role") ?? "";
+}
+
+<div class="container mt-2">
+    <div class="text-center mb-4 pb-2 border-bottom">
+        <div class="bg-dark bg-opacity-10 text-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 75px; height: 75px;">
+            <i class="fas fa-truck-moving fa-2x"></i>
+        </div>
+        <h2 class="fw-bold text-dark">Smart Transportation & Fleet Management</h2>
+        <p class="text-muted fs-5 mt-1 mb-2">Welcome, <strong class="text-dark">@Context.Session.GetString("Username")</strong> <span class="badge bg-secondary rounded-pill align-text-bottom ms-2 px-3 py-2 shadow-sm">@role</span></p>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        @if (role == "Driver")
+        {
+            <div class="col-md-5 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                        <i class="fas fa-route fa-2x"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2">My Trips</h4>
+                    <p class="text-muted small mb-4">View your assigned routes, start trips, and update delivery statuses in real-time.</p>
+                    <a asp-controller="Trip" asp-action="Index" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm w-100">View My Trips</a>
                 </div>
             </div>
         }
-        @if (role == "MaintenanceEngineer") {
-            <div class="col-md-3">
-                <div class="card text-center p-4 shadow-sm">
-                    <i class="fas fa-wrench fa-3x text-danger mb-2"></i>
-                    <h5>Maintenance</h5>
-                    <a asp-controller="Maintenance" asp-action="Index" class="btn btn-danger mt-2">View Records</a>
+        
+        @if (role == "MaintenanceEngineer")
+        {
+            <div class="col-md-5 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                    <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                        <i class="fas fa-wrench fa-2x"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2">Maintenance</h4>
+                    <p class="text-muted small mb-4">Manage fleet repairs, schedule services, and mark vehicles as actively ready for dispatch.</p>
+                    <a asp-controller="Maintenance" asp-action="Index" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm w-100">View Service Records</a>
                 </div>
             </div>
         }
-        @if (role == "FleetManager") {
-            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-car fa-2x text-primary mb-2"></i><h6>Vehicles</h6><a asp-controller="Vehicle" asp-action="Index" class="btn btn-outline-primary btn-sm">Open</a></div></div>
-            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-id-card fa-2x text-success mb-2"></i><h6>Drivers</h6><a asp-controller="Driver" asp-action="Index" class="btn btn-outline-success btn-sm">Open</a></div></div>
-            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-route fa-2x text-warning mb-2"></i><h6>Trips</h6><a asp-controller="Trip" asp-action="Index" class="btn btn-outline-warning btn-sm">Open</a></div></div>
-            <div class="col-md-2"><div class="card text-center p-3 shadow-sm"><i class="fas fa-gas-pump fa-2x text-info mb-2"></i><h6>Fuel</h6><a asp-controller="Fuel" asp-action="Index" class="btn btn-outline-info btn-sm">Open</a></div></div>
+        
+        @if (role == "FleetManager")
+        {
+            <div class="row justify-content-center g-3 row-cols-2 row-cols-md-3 row-cols-lg-5 mb-2">
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;"><i class="fas fa-car fa-lg"></i></div>
+                        <h6 class="fw-bold mb-3 small text-uppercase">Vehicles</h6>
+                        <a asp-controller="Vehicle" asp-action="Index" class="btn btn-light text-primary fw-bold rounded-pill w-100 shadow-sm btn-sm">Open</a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;"><i class="fas fa-id-card fa-lg"></i></div>
+                        <h6 class="fw-bold mb-3 small text-uppercase">Drivers</h6>
+                        <a asp-controller="Driver" asp-action="Index" class="btn btn-light text-success fw-bold rounded-pill w-100 shadow-sm btn-sm">Open</a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;"><i class="fas fa-route fa-lg"></i></div>
+                        <h6 class="fw-bold mb-3 small text-uppercase">Trips</h6>
+                        <a asp-controller="Trip" asp-action="Index" class="btn btn-light text-warning fw-bold rounded-pill w-100 shadow-sm btn-sm">Open</a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;"><i class="fas fa-wrench fa-lg"></i></div>
+                        <h6 class="fw-bold mb-3 small text-uppercase">Service</h6>
+                        <a asp-controller="Maintenance" asp-action="Index" class="btn btn-light text-danger fw-bold rounded-pill w-100 shadow-sm btn-sm">Open</a>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 transition-hover">
+                        <div class="bg-info bg-opacity-10 text-info rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;"><i class="fas fa-gas-pump fa-lg"></i></div>
+                        <h6 class="fw-bold mb-3 small text-uppercase">Fuel</h6>
+                        <a asp-controller="Fuel" asp-action="Index" class="btn btn-light text-info fw-bold rounded-pill w-100 shadow-sm btn-sm">Open</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 mt-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-4 text-center">
+                        <h6 class="fw-bold mb-3 text-secondary text-uppercase tracking-wide"><i class="fas fa-bolt text-warning me-2"></i>Operational Quick Actions</h6>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            <a asp-controller="Vehicle" asp-action="AddVehicle" class="btn btn-outline-primary rounded-pill px-4 shadow-sm"><i class="fas fa-car me-2"></i>Add Vehicle</a>
+                            <a asp-controller="Driver" asp-action="AddDriver" class="btn btn-outline-success rounded-pill px-4 shadow-sm"><i class="fas fa-id-card me-2"></i>Add Driver</a>
+                            <a asp-controller="Trip" asp-action="CreateTrip" class="btn btn-outline-warning rounded-pill px-4 shadow-sm text-dark"><i class="fas fa-route me-2"></i>New Trip</a>
+                            <a asp-controller="Maintenance" asp-action="ScheduleMaintenance" class="btn btn-outline-danger rounded-pill px-4 shadow-sm"><i class="fas fa-wrench me-2"></i>Schedule Service</a>
+                            <a asp-controller="Fuel" asp-action="AddFuelEntry" class="btn btn-outline-info rounded-pill px-4 shadow-sm text-dark"><i class="fas fa-gas-pump me-2"></i>Log Fuel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
     </div>
 </div>

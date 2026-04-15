@@ -1,88 +1,103 @@
 @model TransportationManagement.ViewModels.AdminDashboardViewModel
-@{ ViewData["Title"] = "Admin Dashboard"; }
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
 
-<h3 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h3>
+<div class="d-flex align-items-center mb-4">
+    <div class="bg-dark text-white rounded-3 p-2 me-3 shadow-sm">
+        <i class="fas fa-tachometer-alt fa-lg px-1"></i>
+    </div>
+    <h3 class="mb-0 fw-bold">Admin Dashboard</h3>
+</div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-2">
-        <div class="stat-card text-center ">
-            <i class="fas fa-car stat-icon"></i>
-            <h3>@Model.TotalVehicles</h3>
-            <p>Vehicles</p>
-            <a asp-controller="Vehicle" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+<div class="row g-4 mb-5">
+    <div class="col-md-2 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center h-100 transition-hover">
+            <div class="text-primary mb-2"><i class="fas fa-car fa-2x"></i></div>
+            <h2 class="fw-bold mb-0">@Model.TotalVehicles</h2>
+            <p class="text-muted small mb-3">Vehicles</p>
+            <a asp-controller="Vehicle" asp-action="Index" class="btn btn-light text-primary btn-sm rounded-pill fw-semibold shadow-sm">View</a>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="stat-card text-center">
-            <i class="fas fa-id-card stat-icon"></i>
-            <h3>@Model.TotalDrivers</h3>
-            <p>Drivers</p>
-            <a asp-controller="Driver" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+    <div class="col-md-2 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center h-100 transition-hover">
+            <div class="text-success mb-2"><i class="fas fa-id-card fa-2x"></i></div>
+            <h2 class="fw-bold mb-0">@Model.TotalDrivers</h2>
+            <p class="text-muted small mb-3">Drivers</p>
+            <a asp-controller="Driver" asp-action="Index" class="btn btn-light text-success btn-sm rounded-pill fw-semibold shadow-sm">View</a>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="stat-card text-center">
-            <i class="fas fa-route stat-icon"></i>
-            <h3>@Model.TotalTrips</h3>
-            <p>Trips</p>
-            <a asp-controller="Trip" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+    <div class="col-md-2 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center h-100 transition-hover">
+            <div class="text-warning mb-2"><i class="fas fa-route fa-2x"></i></div>
+            <h2 class="fw-bold mb-0">@Model.TotalTrips</h2>
+            <p class="text-muted small mb-3">Trips</p>
+            <a asp-controller="Trip" asp-action="Index" class="btn btn-light text-warning btn-sm rounded-pill fw-semibold shadow-sm">View</a>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="stat-card text-center">
-            <i class="fas fa-wrench stat-icon"></i>
-            <h3>@Model.TotalMaintenance</h3>
-            <p>Maintenance</p>
-            <a asp-controller="Maintenance" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+    <div class="col-md-2 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center h-100 transition-hover">
+            <div class="text-danger mb-2"><i class="fas fa-wrench fa-2x"></i></div>
+            <h2 class="fw-bold mb-0">@Model.TotalMaintenance</h2>
+            <p class="text-muted small mb-3">Service</p>
+            <a asp-controller="Maintenance" asp-action="Index" class="btn btn-light text-danger btn-sm rounded-pill fw-semibold shadow-sm">View</a>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="stat-card text-center">
-            <i class="fas fa-gas-pump stat-icon"></i>
-            <h3>@Model.TotalFuelEntries</h3>
-            <p>Fuel Entries</p>
-            <a asp-controller="Fuel" asp-action="Index" class="btn btn-outline-primary btn-sm mt-2">View</a>
+    <div class="col-md-2 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center h-100 transition-hover">
+            <div class="text-info mb-2"><i class="fas fa-gas-pump fa-2x"></i></div>
+            <h2 class="fw-bold mb-0">@Model.TotalFuelEntries</h2>
+            <p class="text-muted small mb-3">Fuel Logs</p>
+            <a asp-controller="Fuel" asp-action="Index" class="btn btn-light text-info btn-sm rounded-pill fw-semibold shadow-sm">View</a>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="stat-card text-center">
-            <i class="fas fa-users stat-icon"></i>
-            <h3>@Model.TotalUsers</h3>
-            <p>Users</p>
-            <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary btn-sm mt-2">View</a>
+    <div class="col-md-2 col-sm-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center h-100 transition-hover">
+            <div class="text-dark mb-2"><i class="fas fa-users fa-2x"></i></div>
+            <h2 class="fw-bold mb-0">@Model.TotalUsers</h2>
+            <p class="text-muted small mb-3">Accounts</p>
+            <a asp-controller="Admin" asp-action="Users" class="btn btn-light text-dark btn-sm rounded-pill fw-semibold shadow-sm">View</a>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-white fw-bold"><i class="fas fa-bolt me-2"></i>Quick Actions</div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    <a asp-controller="Admin" asp-action="CreateUser" class="btn btn-outline-dark btn-sm"><i class="fas fa-user-plus me-1"></i>Add User</a>
-                    <a asp-controller="Vehicle" asp-action="AddVehicle" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Add Vehicle</a>
-                    <a asp-controller="Driver" asp-action="AddDriver" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Add Driver</a>
-                    <a asp-controller="Trip" asp-action="CreateTrip" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>New Trip</a>
-                    <a asp-controller="Maintenance" asp-action="ScheduleMaintenance" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Schedule Maintenance</a>
-                    <a asp-controller="Fuel" asp-action="AddFuelEntry" class="btn btn-outline-dark btn-sm"><i class="fas fa-plus me-1"></i>Add Fuel</a>
-                </div>
+<div class="row g-4">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary bg-opacity-10 text-center p-4 d-flex flex-column justify-content-center">
+            <div class="mb-3">
+                <i class="fas fa-users-cog fa-4x text-primary opacity-75"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-2">User Management Hub</h4>
+            <p class="text-muted px-4 mb-4">As an Administrator, you have exclusive access to manage employee accounts, assign system roles, and maintain security across the platform.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a asp-controller="Admin" asp-action="CreateUser" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold"><i class="fas fa-user-plus me-2"></i>Add New User</a>
+                <a asp-controller="Admin" asp-action="Users" class="btn btn-light text-primary rounded-pill px-4 shadow-sm fw-bold border"><i class="fas fa-list me-2"></i>View Directory</a>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-dark text-white"><i class="fas fa-info-circle me-2"></i>Roles & Access</div>
-            <div class="card-body">
-                <table class="table table-sm">
-                    <thead><tr><th>Role</th><th>Access</th></tr></thead>
-                    <tbody>
-                        <tr><td><span class="badge bg-primary">Admin</span></td><td>Full access to everything</td></tr>
-                        <tr><td><span class="badge bg-secondary">FleetManager</span></td><td>Vehicles, Drivers, Trips, Fuel, Maintenance</td></tr>
-                        <tr><td><span class="badge bg-light text-dark">Driver</span></td><td>View & update trips only</td></tr>
-                        <tr><td><span class="badge bg-dark">MaintenanceEngineer</span></td><td>Maintenance records only</td></tr>
-                    </tbody>
-                </table>
+    
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-dark text-white">
+            <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-shield-alt text-primary me-2"></i>Access Matrix</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-primary rounded-pill me-3" style="width: 120px;">Admin</span>
+                    <span class="small text-light opacity-75">Full system access</span>
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-secondary rounded-pill me-3" style="width: 120px;">FleetManager</span>
+                    <span class="small text-light opacity-75">All operational modules</span>
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-light text-dark rounded-pill me-3" style="width: 120px;">Driver</span>
+                    <span class="small text-light opacity-75">Assigned trips only</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-danger rounded-pill me-3" style="width: 120px;">Maintenance</span>
+                    <span class="small text-light opacity-75">Service records only</span>
+                </div>
             </div>
         </div>
     </div>
