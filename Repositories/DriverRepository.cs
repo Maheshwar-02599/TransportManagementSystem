@@ -13,6 +13,8 @@ namespace TransportationManagement.Repositories
 
         public Driver? GetDriverById(int driverId) => _context.Drivers.Find(driverId);
 
+        public Driver? GetDriverByUserId(int userId) => _context.Drivers.FirstOrDefault(d => d.UserId == userId);
+
         public void AddDriver(Driver driver) { _context.Drivers.Add(driver); _context.SaveChanges(); }
 
         public void UpdateDriver(Driver driver) { _context.Drivers.Update(driver); _context.SaveChanges(); }

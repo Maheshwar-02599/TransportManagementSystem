@@ -1,18 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
+using TransportationManagement.Data;
+using TransportationManagement.ViewModels;
 
 namespace TransportationManagement.Controllers
 {
 	public class DriverController : Controller
 	{
-		private readonly DriverService _driverService;
+        private readonly DriverService _driverService;
 		private readonly TripService _tripService;
+		private readonly ApplicationDbContext _context;
 
-		public DriverController(DriverService driverService, TripService tripService)
+		public DriverController(DriverService driverService, TripService tripService, ApplicationDbContext context)
 		{
 			_driverService = driverService;
 			_tripService = tripService;
+			_context = context;
 		}
 
 		// --- NEW RBAC SECURITY LOGIC ---
@@ -48,25 +52,57 @@ namespace TransportationManagement.Controllers
 			return View(_driverService.GetAllDrivers());
 		}
 
-		[HttpGet]
+        [HttpGet]
 		public IActionResult AddDriver()
 		{
 			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			return View();
+			return View(new CreateDriverViewModel());
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult AddDriver(Driver driverData)
+		public IActionResult AddDriver(CreateDriverViewModel model)
 		{
 			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			if (ModelState.IsValid)
+
+			// Validate both nested Driver and credentials
+			if (!ModelState.IsValid)
 			{
-				_driverService.AddDriver(driverData);
-				TempData["Success"] = "Driver added successfully.";
+				return View(model);
+			}
+
+			// Check duplicate user email
+			var exists = _context.Users.Any(u => u.Username == model.Username);
+			if (exists)
+			{
+				ModelState.AddModelError("Username", "This email is already registered.");
+				return View(model);
+			}
+
+			try
+			{
+                // 1. Create user account for driver (so we get the Id)
+				var user = new User
+				{
+					Username = model.Username,
+					Password = Data.PasswordHelper.HashPassword(model.Password),
+					Role = "Driver"
+				};
+				_context.Users.Add(user);
+				_context.SaveChanges();
+
+				// 2. Add driver and link to user
+				model.Driver.UserId = user.Id;
+				_driverService.AddDriver(model.Driver);
+
+				TempData["Success"] = "Driver and login created successfully.";
 				return RedirectToAction("Index");
 			}
-			return View(driverData);
+			catch (Exception ex)
+			{
+				ModelState.AddModelError(string.Empty, "Error creating driver: " + ex.Message);
+				return View(model);
+			}
 		}
 
 		[HttpGet]

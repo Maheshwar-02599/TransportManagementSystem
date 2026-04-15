@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TransportationManagement.Models
 {
@@ -17,12 +18,19 @@ namespace TransportationManagement.Models
 
         [Required]
         [StringLength(20)]
+
         public string contactNumber { get; set; } = string.Empty;
 
         public DriverStatus status { get; set; } 
 
+        // Link to application user (optional). Requires a migration to persist to DB.
+        public int? UserId { get; set; }
 
-		public ICollection<Trip> Trips { get; set; } = new List<Trip>();
+        [ForeignKey("UserId")]
+        public User? User { get; set; }
+
+
+        public ICollection<Trip> Trips { get; set; } = new List<Trip>();
     }
 	public enum DriverStatus { AVAILABLE, ON_TRIP, INACTIVE }
 }

@@ -113,6 +113,22 @@
                                 <a asp-action="UpdateTripStatus" asp-route-id="@t.tripId" class="btn btn-light btn-sm text-warning rounded-circle shadow-sm me-1" title="Edit"><i class="fas fa-edit"></i></a>
                                 <a asp-action="Delete" asp-route-id="@t.tripId" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete"><i class="fas fa-trash"></i></a>
                             }
+
+                            @if (Context.Session.GetString("Role") == "Driver")
+                            {
+                                @if (t.tripStatus.ToString() == "PLANNED")
+                                {
+                                    <form asp-action="StartTrip" asp-route-id="@t.tripId" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-play me-1"></i>Start</button>
+                                    </form>
+                                }
+                                else if (t.tripStatus.ToString() == "IN_PROGRESS")
+                                {
+                                    <form asp-action="EndTrip" asp-route-id="@t.tripId" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-stop me-1"></i>End</button>
+                                    </form>
+                                }
+                            }
                         </td>
                     </tr>
                 }
