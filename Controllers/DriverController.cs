@@ -1,217 +1,124 @@
 using Microsoft.AspNetCore.Mvc;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
-using TransportationManagement.Data;
 using TransportationManagement.ViewModels;
+using System;
 
 namespace TransportationManagement.Controllers
 {
-	public class DriverController : Controller
-	{
+    public class DriverController : Controller
+    {
         private readonly DriverService _driverService;
-		private readonly TripService _tripService;
-		private readonly ApplicationDbContext _context;
+        private readonly AccountService _accountService;
 
-		public DriverController(DriverService driverService, TripService tripService, ApplicationDbContext context)
-		{
-			_driverService = driverService;
-			_tripService = tripService;
-			_context = context;
-		}
+        public DriverController(DriverService driverService, AccountService accountService)
+        {
+            _driverService = driverService;
+            _accountService = accountService;
+        }
 
-		// --- NEW RBAC SECURITY LOGIC ---
+        private bool CanView() => HttpContext.Session.GetString("Role") == "Admin" || HttpContext.Session.GetString("Role") == "FleetManager";
+        private bool CanEdit() => HttpContext.Session.GetString("Role") == "FleetManager";
 
-		// 1. View Access: Both Admin and FleetManager can read data
-		private bool CanView()
-		{
-			var role = HttpContext.Session.GetString("Role");
-			return role == "Admin" || role == "FleetManager";
-		}
-
-		// 2. Edit Access: ONLY FleetManager can perform CRUD operations
-		private bool CanEdit()
-		{
-			var role = HttpContext.Session.GetString("Role");
-			return role == "FleetManager";
-		}
-
-		// -------------------------------
-
-		public IActionResult Index()
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
-
-			// Fetch active trips to determine busy drivers dynamically
-			var activeRoutes = _tripService.GetAllTrips()
-									.Where(t => t.tripStatus != TripStatus.COMPLETED)
-									.ToList();
-
-			// Pass the list of busy driver IDs to the view
-			ViewBag.EngagedStaffIds = activeRoutes.Select(t => t.driverId).ToList();
-
-			return View(_driverService.GetAllDrivers());
-		}
+        public IActionResult Index()
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
+            return View(_driverService.GetAllDrivers());
+        }
 
         [HttpGet]
-		public IActionResult AddDriver()
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			return View(new CreateDriverViewModel());
-		}
+        public IActionResult AddDriver()
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            return View(new CreateDriverViewModel());
+        }
 
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult AddDriver(CreateDriverViewModel model)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddDriver(CreateDriverViewModel model)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            if (_accountService.IsUsernameTaken(model.Username))
+            {
+                ModelState.AddModelError("Username", "This email is already registered.");
+            }
 
-			// Validate both nested Driver and credentials
-			if (!ModelState.IsValid)
-			{
-				return View(model);
-			}
+            if (ModelState.IsValid)
+            {
+                _driverService.AddDriver(model.Driver);
+                var userAccount = new RegisterViewModel
+                {
+                    Username = model.Username,
+                    Password = model.Password,
+                    ConfirmPassword = model.ConfirmPassword,
+                    Role = "Driver"
+                };
+                _accountService.CreateAccount(userAccount);
+                TempData["Success"] = "Driver created successfully!";
+                return RedirectToAction("Index");
+            }
+            return View(model);
+        }
 
-			// Check duplicate user email
-			var exists = _context.Users.Any(u => u.Username == model.Username);
-			if (exists)
-			{
-				ModelState.AddModelError("Username", "This email is already registered.");
-				return View(model);
-			}
+        [HttpGet]
+        public IActionResult UpdateDriver(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            var driver = _driverService.GetDriverDetails(id);
+            if (driver == null) return NotFound();
+            return View(driver);
+        }
 
-			try
-			{
-                // 1. Create user account for driver (so we get the Id)
-				var user = new User
-				{
-					Username = model.Username,
-					Password = Data.PasswordHelper.HashPassword(model.Password),
-					Role = "Driver"
-				};
-				_context.Users.Add(user);
-				_context.SaveChanges();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateDriver(Driver driver)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _driverService.UpdateDriver(driver);
+                TempData["Success"] = "Driver updated successfully.";
+                return RedirectToAction("Index");
+            }
+            return View(driver);
+        }
 
-				// 2. Add driver and link to user
-				model.Driver.UserId = user.Id;
-				_driverService.AddDriver(model.Driver);
+        // --- ADDED THIS GET METHOD TO CAPTURE THE LINK CLICK ---
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-				TempData["Success"] = "Driver and login created successfully.";
-				return RedirectToAction("Index");
-			}
-			catch (Exception ex)
-			{
-				ModelState.AddModelError(string.Empty, "Error creating driver: " + ex.Message);
-				return View(model);
-			}
-		}
+            // This captures the GET request from your <a> tag and redirects to the logic below
+            return DeleteConfirmed(id);
+        }
 
-		[HttpGet]
-		public IActionResult GetDriverDetails(int id)
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
-			var driverData = _driverService.GetDriverDetails(id);
-			if (driverData == null) return NotFound();
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-			// Dynamic check for details view
-			ViewBag.IsCurrentlyDeployed = _tripService.GetAllTrips()
-										  .Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
+            var driver = _driverService.GetDriverDetails(id);
+            if (driver == null) return NotFound();
 
-			return View(driverData);
-		}
+            // BUSINESS RULE: Cannot delete if Driver is currently on a trip
+            if (driver.status == DriverStatus.ON_TRIP)
+            {
+                TempData["Error"] = $"Constraint Failed: Cannot delete {driver.name} while they are ON_TRIP.";
+                return RedirectToAction("Index");
+            }
 
-		[HttpGet]
-		public IActionResult AssignTrip(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			return RedirectToAction("CreateTrip", "Trip");
-		}
-
-		[HttpGet]
-		public IActionResult GetAssignedTrips(int id) // 'id' is the driverId passed from the Index
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
-
-			// Fetch only trips belonging to this specific driverId
-			var trips = _tripService.GetAllTrips()
-									.Where(t => t.driverId == id)
-									.ToList();
-
-			// Get driver details for the page heading
-			var driverInfo = _driverService.GetDriverDetails(id);
-			ViewBag.DriverName = driverInfo?.name ?? "Driver";
-			ViewBag.DriverId = id;
-
-			return View(trips);
-		}
-
-		[HttpGet]
-		public IActionResult Edit(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var driverData = _driverService.GetDriverDetails(id);
-			if (driverData == null) return NotFound();
-			return View(driverData);
-		}
-
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult Edit(Driver driverData)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_driverService.UpdateDriver(driverData);
-					TempData["Success"] = "Driver updated successfully.";
-					return RedirectToAction("Index");
-				}
-				catch (Exception ex)
-				{
-					ModelState.AddModelError("", "Exception: " + ex.Message);
-				}
-			}
-			return View(driverData);
-		}
-
-		[HttpGet]
-		public IActionResult Delete(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var driverData = _driverService.GetDriverDetails(id);
-			if (driverData == null) return NotFound();
-			return View(driverData);
-		}
-
-		[HttpPost, ActionName("Delete")]
-		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-
-			// 1. Pre-Check: Prevent deletion if actively on a route
-			bool isDriverBusy = _tripService.GetAllTrips()
-				.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
-
-			if (isDriverBusy)
-			{
-				TempData["Error"] = "Constraint Failed: Cannot delete this driver because they are currently ON_TRIP.";
-				return RedirectToAction("Index");
-			}
-
-			// 2. Safely attempt database deletion
-			try
-			{
-				_driverService.DeleteDriver(id);
-				TempData["Success"] = "Driver deleted successfully.";
-			}
-			catch (Exception)
-			{
-				TempData["Error"] = "Cannot delete this driver because they have associated route history in the database.";
-			}
-
-			return RedirectToAction("Index");
-		}
-	}
+            try
+            {
+                _driverService.DeleteDriver(id);
+                TempData["Success"] = "Driver deleted successfully.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Cannot delete driver due to historical trip records.";
+            }
+            return RedirectToAction("Index");
+        }
+    }
 }

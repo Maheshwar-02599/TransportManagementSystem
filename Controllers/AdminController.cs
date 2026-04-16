@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using TransportationManagement.Data;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 using TransportationManagement.ViewModels;
@@ -8,18 +7,18 @@ namespace TransportationManagement.Controllers
 {
     public class AdminController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly AccountService _accountService;
         private readonly VehicleService _vehicleService;
         private readonly DriverService _driverService;
         private readonly TripService _tripService;
         private readonly MaintenanceService _maintenanceService;
         private readonly FuelService _fuelService;
 
-        public AdminController(ApplicationDbContext context, VehicleService vehicleService,
+        public AdminController(AccountService accountService, VehicleService vehicleService,
             DriverService driverService, TripService tripService,
             MaintenanceService maintenanceService, FuelService fuelService)
         {
-            _context = context;
+            _accountService = accountService;
             _vehicleService = vehicleService;
             _driverService = driverService;
             _tripService = tripService;
@@ -28,19 +27,18 @@ namespace TransportationManagement.Controllers
         }
 
         private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
-        private bool IsLoggedIn() => HttpContext.Session.GetString("Username") != null;
 
         public IActionResult Dashboard()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
             var model = new AdminDashboardViewModel
             {
-                TotalVehicles    = _vehicleService.GetAllVehicles().Count,
-                TotalDrivers     = _driverService.GetAllDrivers().Count,
-                TotalTrips       = _tripService.GetAllTrips().Count,
+                TotalVehicles = _vehicleService.GetAllVehicles().Count,
+                TotalDrivers = _driverService.GetAllDrivers().Count,
+                TotalTrips = _tripService.GetAllTrips().Count,
                 TotalMaintenance = _maintenanceService.GetAllMaintenanceRecords().Count,
                 TotalFuelEntries = _fuelService.GetAllFuelEntries().Count,
-                TotalUsers       = _context.Users.Count()
+                TotalUsers = _accountService.GetTotalUserCount()
             };
             return View(model);
         }
@@ -48,7 +46,7 @@ namespace TransportationManagement.Controllers
         public IActionResult Users()
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-            return View(_context.Users.ToList());
+            return View(_accountService.GetAllUsers());
         }
 
         [HttpGet]
@@ -65,10 +63,12 @@ namespace TransportationManagement.Controllers
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
             if (ModelState.IsValid)
             {
-                if (_context.Users.Any(u => u.Username == model.Username))
-                { ModelState.AddModelError("Username", "Email already exists."); return View(model); }
-                _context.Users.Add(new User { Username = model.Username, Password = PasswordHelper.HashPassword(model.Password), Role = model.Role });
-                _context.SaveChanges();
+                if (_accountService.IsUsernameTaken(model.Username))
+                {
+                    ModelState.AddModelError("Username", "Email already exists.");
+                    return View(model);
+                }
+                _accountService.CreateAccount(model);
                 TempData["Success"] = "User created successfully.";
                 return RedirectToAction("Users");
             }
@@ -79,7 +79,7 @@ namespace TransportationManagement.Controllers
         public IActionResult EditUser(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-            var user = _context.Users.Find(id);
+            var user = _accountService.GetUserById(id);
             if (user == null) return NotFound();
             return View(user);
         }
@@ -89,11 +89,7 @@ namespace TransportationManagement.Controllers
         public IActionResult EditUser(User user)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-            var existing = _context.Users.Find(user.Id);
-            if (existing == null) return NotFound();
-            existing.Username = user.Username;
-            existing.Role = user.Role;
-            _context.SaveChanges();
+            _accountService.UpdateUser(user);
             TempData["Success"] = "User updated.";
             return RedirectToAction("Users");
         }
@@ -103,15 +99,16 @@ namespace TransportationManagement.Controllers
         public IActionResult DeleteUser(int id)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
-            var user = _context.Users.Find(id);
-            if (user != null) { _context.Users.Remove(user); _context.SaveChanges(); TempData["Success"] = "User deleted."; }
+            _accountService.RemoveUser(id);
+            TempData["Success"] = "User deleted.";
             return RedirectToAction("Users");
         }
 
-        public IActionResult Vehicles()    { if (!IsAdmin()) return RedirectToAction("Login","Account"); return View(_vehicleService.GetAllVehicles()); }
-        public IActionResult Drivers()     { if (!IsAdmin()) return RedirectToAction("Login","Account"); return View(_driverService.GetAllDrivers()); }
-        public IActionResult Trips()       { if (!IsAdmin()) return RedirectToAction("Login","Account"); return View(_tripService.GetAllTrips()); }
-        public IActionResult Maintenance() { if (!IsAdmin()) return RedirectToAction("Login","Account"); return View(_maintenanceService.GetAllMaintenanceRecords()); }
-        public IActionResult Fuel()        { if (!IsAdmin()) return RedirectToAction("Login","Account"); return View(_fuelService.GetAllFuelEntries()); }
+        // --- View Redirects ---
+        public IActionResult Vehicles() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(_vehicleService.GetAllVehicles()); }
+        public IActionResult Drivers() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(_driverService.GetAllDrivers()); }
+        public IActionResult Trips() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(_tripService.GetAllTrips()); }
+        public IActionResult Maintenance() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(_maintenanceService.GetAllMaintenanceRecords()); }
+        public IActionResult Fuel() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(_fuelService.GetAllFuelEntries()); }
     }
 }

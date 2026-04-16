@@ -1,161 +1,129 @@
 using Microsoft.AspNetCore.Mvc;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
+using System;
+using System.Linq;
 
 namespace TransportationManagement.Controllers
 {
-	public class VehicleController : Controller
-	{
-		private readonly VehicleService _vehicleSvc;
-		private readonly TripService _routeSvc; // Injected to check active routes
+    public class VehicleController : Controller
+    {
+        private readonly VehicleService _vehicleSvc;
+        private readonly TripService _routeSvc;
 
-		public VehicleController(VehicleService vehicleService, TripService tripService)
-		{
-			_vehicleSvc = vehicleService;
-			_routeSvc = tripService;
-		}
+        public VehicleController(VehicleService vehicleService, TripService tripService)
+        {
+            _vehicleSvc = vehicleService;
+            _routeSvc = tripService;
+        }
 
-		// --- NEW RBAC SECURITY LOGIC ---
+        private bool CanView() => HttpContext.Session.GetString("Role") == "Admin" || HttpContext.Session.GetString("Role") == "FleetManager";
+        private bool CanEdit() => HttpContext.Session.GetString("Role") == "FleetManager";
 
-		// 1. View Access: Both Admin and FleetManager can read data
-		private bool CanView()
-		{
-			var userRole = HttpContext.Session.GetString("Role");
-			return userRole == "Admin" || userRole == "FleetManager";
-		}
+        public IActionResult Index()
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
+            var unfinishedRoutes = _routeSvc.GetAllTrips().Where(t => t.tripStatus != TripStatus.COMPLETED).ToList();
+            ViewBag.BusyVehicleIds = unfinishedRoutes.Select(t => t.vehicleId).ToList();
+            return View(_vehicleSvc.GetAllVehicles());
+        }
 
-		// 2. Edit Access: ONLY FleetManager can perform CRUD operations
-		private bool CanEdit()
-		{
-			var userRole = HttpContext.Session.GetString("Role");
-			return userRole == "FleetManager";
-		}
+        [HttpGet]
+        public IActionResult AddVehicle()
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            return View();
+        }
 
-		// -------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddVehicle(Vehicle vehicleData)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _vehicleSvc.AddVehicle(vehicleData);
+                TempData["Success"] = "Vehicle added successfully.";
+                return RedirectToAction("Index");
+            }
+            return View(vehicleData);
+        }
 
-		public IActionResult Index()
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account"); // Admin can view
+        [HttpGet]
+        public IActionResult UpdateVehicle(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            var vehicleData = _vehicleSvc.GetVehicleDetails(id);
+            if (vehicleData == null) return NotFound();
+            return View(vehicleData);
+        }
 
-			// Fetch active trips to determine busy vehicles dynamically
-			var unfinishedRoutes = _routeSvc.GetAllTrips()
-									.Where(t => t.tripStatus != TripStatus.COMPLETED)
-									.ToList();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateVehicle(Vehicle vehicleData)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            if (ModelState.IsValid)
+            {
+                _vehicleSvc.UpdateVehicle(vehicleData);
+                TempData["Success"] = "Vehicle updated successfully.";
+                return RedirectToAction("Index");
+            }
+            return View(vehicleData);
+        }
 
-			ViewBag.BusyVehicleIds = unfinishedRoutes.Select(t => t.vehicleId).ToList();
+        // --- ADDED THIS METHOD TO FIX REDIRECTION ---
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-			return View(_vehicleSvc.GetAllVehicles());
-		}
+            // Instead of showing a new page, we process the logic and redirect
+            // If you want a confirmation page, return View(vehicleData) here.
+            // Since you want it to work with your current frontend link:
+            return DeleteConfirmed(id);
+        }
 
-		[HttpGet]
-		public IActionResult AddVehicle()
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Kicks Admin back to the list
-			return View();
-		}
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult AddVehicle(Vehicle vehicleData)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+            var vehicle = _vehicleSvc.GetVehicleDetails(id);
+            if (vehicle == null) return NotFound();
 
-			if (ModelState.IsValid)
-			{
-				_vehicleSvc.AddVehicle(vehicleData);
-				TempData["Success"] = "Vehicle added successfully.";
-				return RedirectToAction("Index");
-			}
-			return View(vehicleData);
-		}
+            // Check for Active Trips
+            bool isActivelyDeployed = _routeSvc.GetAllTrips()
+                .Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
 
-		[HttpGet]
-		public IActionResult GetVehicleDetails(int id)
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account"); // Admin can view
+            // BUSINESS RULE: Cannot delete if In Service or currently On Trip
+            if (isActivelyDeployed || vehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
+            {
+                TempData["Error"] = $"Deletion Denied: Vehicle {vehicle.vehicleNumber} is currently IN_SERVICE or assigned to an active trip.";
+                return RedirectToAction("Index");
+            }
 
-			var vehicleData = _vehicleSvc.GetVehicleDetails(id);
-			if (vehicleData == null) return NotFound();
+            try
+            {
+                _vehicleSvc.DeleteVehicle(id);
+                TempData["Success"] = "Vehicle deleted successfully.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Cannot delete vehicle due to existing history (Trips/Fuel).";
+            }
+            return RedirectToAction("Index");
+        }
 
-			// Dynamic check for details view
-			ViewBag.IsOnActiveTrip = _routeSvc.GetAllTrips()
-									  .Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
-
-			return View(vehicleData);
-		}
-
-		[HttpGet]
-		public IActionResult UpdateVehicle(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Kicks Admin out
-			var vehicleData = _vehicleSvc.GetVehicleDetails(id);
-			if (vehicleData == null) return NotFound();
-			return View(vehicleData);
-		}
-
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult UpdateVehicle(Vehicle vehicleData)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_vehicleSvc.UpdateVehicle(vehicleData);
-					TempData["Success"] = "Vehicle updated successfully.";
-					return RedirectToAction("Index");
-				}
-				catch (Exception ex)
-				{
-					ModelState.AddModelError("", "Exception: " + ex.Message);
-				}
-			}
-			return View(vehicleData);
-		}
-
-		[HttpGet]
-		public IActionResult Delete(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Kicks Admin out
-			var vehicleData = _vehicleSvc.GetVehicleDetails(id);
-			if (vehicleData == null) return NotFound();
-			return View(vehicleData);
-		}
-
-		[HttpPost, ActionName("Delete")]
-		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-
-			// ... (Existing pre-deletion checks - ON_TRIP, Historical Records) ...
-
-			// 1. PRE-CHECK: Is it actually on a trip right now?
-			bool isActivelyDeployed = _routeSvc.GetAllTrips()
-				.Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
-
-			if (isActivelyDeployed)
-			{
-				// Block deletion and tell them it's on a trip
-				TempData["Error"] = "Constraint Failed: Cannot delete this vehicle because it is currently ON_TRIP.";
-				return RedirectToAction("Index");
-			}
-
-			// 2. Database Deletion Attempt
-			try
-			{
-				_vehicleSvc.DeleteVehicle(id);
-				TempData["Success"] = "Vehicle deleted successfully.";
-			}
-			catch (Exception)
-			{
-				// If we get here, it wasn't on a trip, but the database still blocked it (e.g., past fuel records)
-				TempData["Error"] = "Cannot delete this vehicle because it has associated historical records in the database (Trips, Fuel, or Maintenance).";
-			}
-
-			return RedirectToAction("Index");
-		}
-	}
+        // Added detail view just in case it's needed for the eye icon
+        [HttpGet]
+        public IActionResult GetVehicleDetails(int id)
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
+            var vehicleData = _vehicleSvc.GetVehicleDetails(id);
+            if (vehicleData == null) return NotFound();
+            return View(vehicleData);
+        }
+    }
 }

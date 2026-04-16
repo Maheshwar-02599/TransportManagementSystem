@@ -10,11 +10,14 @@ namespace TransportationManagement.Repositories
         private readonly ApplicationDbContext _context;
         public MaintenanceRepository(ApplicationDbContext context) { _context = context; }
 
-        public List<MaintenanceRecord> GetAllMaintenanceRecords() => _context.MaintenanceRecords.Include(m => m.Vehicle).ToList();
+        public List<MaintenanceRecord> GetAllMaintenanceRecords() =>
+            _context.MaintenanceRecords.Include(m => m.Vehicle).ToList();
 
-        public MaintenanceRecord? GetMaintenanceById(int maintenanceId) => _context.MaintenanceRecords.Include(m => m.Vehicle).FirstOrDefault(m => m.maintenanceId == maintenanceId);
+        public MaintenanceRecord? GetMaintenanceById(int maintenanceId) =>
+            _context.MaintenanceRecords.Include(m => m.Vehicle).FirstOrDefault(m => m.maintenanceId == maintenanceId);
 
-        public List<MaintenanceRecord> GetMaintenanceByVehicleId(int vehicleId) => _context.MaintenanceRecords.Include(m => m.Vehicle).Where(m => m.vehicleId == vehicleId).ToList();
+        public List<MaintenanceRecord> GetMaintenanceByVehicleId(int vehicleId) =>
+            _context.MaintenanceRecords.Include(m => m.Vehicle).Where(m => m.vehicleId == vehicleId).ToList();
 
         public void AddMaintenance(MaintenanceRecord record) { _context.MaintenanceRecords.Add(record); _context.SaveChanges(); }
 

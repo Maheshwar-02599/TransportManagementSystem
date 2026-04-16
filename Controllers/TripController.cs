@@ -1,258 +1,268 @@
-using System;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace TransportationManagement.Controllers
 {
-	public class TripController : Controller
-	{
-		private readonly TripService _tripService;
-		private readonly VehicleService _vehicleService;
-		private readonly DriverService _driverService;
+    public class TripController : Controller
+    {
+        private readonly TripService _tripService;
+        private readonly VehicleService _vehicleService;
+        private readonly DriverService _driverService;
+        private readonly FuelService _fuelService;
 
-		// NEW: Fuel Service added for auto-logging
-		private readonly FuelService _fuelService;
+        public TripController(TripService tripService, VehicleService vehicleService,
+                              DriverService driverService, FuelService fuelService)
+        {
+            _tripService = tripService;
+            _vehicleService = vehicleService;
+            _driverService = driverService;
+            _fuelService = fuelService;
+        }
 
-		public TripController(TripService tripService, VehicleService vehicleService, DriverService driverService, FuelService fuelService)
-		{
-			_tripService = tripService;
-			_vehicleService = vehicleService;
-			_driverService = driverService;
-			_fuelService = fuelService;
-		}
+        // --- Security Logic ---
+        private bool CanView()
+        {
+            var r = HttpContext.Session.GetString("Role");
+            return r == "Admin" || r == "FleetManager" || r == "Driver";
+        }
 
-		// --- RBAC SECURITY LOGIC ---
-		private bool CanView()
-		{
-			var r = HttpContext.Session.GetString("Role");
-			return r == "Admin" || r == "FleetManager" || r == "Driver";
-		}
+        private bool CanEdit()
+        {
+            var r = HttpContext.Session.GetString("Role");
+            return r == "FleetManager";
+        }
 
-		private bool CanEdit()
-		{
-			var r = HttpContext.Session.GetString("Role");
-			return r == "FleetManager";
-		}
-		// ---------------------------
+        private void LoadDropdowns()
+        {
+            var vehicles = _vehicleService.GetAllVehicles();
+            var drivers = _driverService.GetAllDrivers();
+            ViewBag.Vehicles = new SelectList(vehicles, "vehicleId", "vehicleNumber");
+            ViewBag.Drivers = new SelectList(drivers, "driverId", "name");
+        }
 
-		private void LoadDropdowns()
-		{
-			var vehicles = _vehicleService.GetAllVehicles();
-			var drivers = _driverService.GetAllDrivers();
-			ViewBag.Vehicles = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicles, "vehicleId", "vehicleNumber");
-			ViewBag.Drivers = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(drivers, "driverId", "name");
-		}
+        // --- Actions ---
 
-		public IActionResult Index()
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
+        public IActionResult Index()
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
 
-			var allTrips = _tripService.GetAllTrips();
-			var role = HttpContext.Session.GetString("Role");
-			var currentUserEmail = HttpContext.Session.GetString("Username")?.ToLower().Trim();
+            var role = HttpContext.Session.GetString("Role");
+            var username = HttpContext.Session.GetString("Username");
 
-			if (role == "Driver" && !string.IsNullOrEmpty(currentUserEmail))
-			{
-				// Filter trips to only show the ones assigned to this specific driver
-				var emailPrefix = currentUserEmail.Split('@')[0];
-				var driverTrips = allTrips.Where(t => t.Driver != null &&
-								  t.Driver.name.ToLower().Trim().Contains(emailPrefix))
-								  .ToList();
+            if (role == "Driver" && !string.IsNullOrEmpty(username))
+            {
+                // Find the Driver record that matches this login session
+                var driverRecord = _driverService.GetAllDrivers()
+                    .FirstOrDefault(d => d.name.Equals(username, StringComparison.OrdinalIgnoreCase) ||
+                                         username.StartsWith(d.name, StringComparison.OrdinalIgnoreCase));
 
-				return View(driverTrips);
-			}
+                if (driverRecord != null)
+                {
+                    var myTrips = _tripService.GetAllTrips()
+                        .Where(t => t.driverId == driverRecord.driverId)
+                        .ToList();
+                    return View(myTrips);
+                }
+                return View(new List<Trip>());
+            }
 
-			// Admins and Fleet Managers see all trips
-			return View(allTrips);
-		}
+            return View(_tripService.GetAllTrips());
+        }
 
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult StartTrip(int id)
-		{
-			var trip = _tripService.GetTripPlan(id);
-			if (trip != null)
-			{
-				trip.tripStatus = TripStatus.IN_PROGRESS;
-				_tripService.UpdateTripStatus(trip);
-				TempData["Success"] = "Trip started! Drive safely.";
-			}
-			return RedirectToAction("Index");
-		}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult StartTrip(int id)
+        {
+            var trip = _tripService.GetTripPlan(id);
+            if (trip != null)
+            {
+                trip.tripStatus = TripStatus.IN_PROGRESS;
+                _tripService.UpdateTripStatus(trip);
+                TempData["Success"] = "Trip started! Drive safely.";
+            }
+            return RedirectToAction("Index");
+        }
 
-		// =================================================================
-		// NEW: AUTO-FUEL CALCULATION LOGIC
-		// =================================================================
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult EndTrip(int id, int distanceTraveled)
-		{
-			var trip = _tripService.GetTripPlan(id);
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EndTrip(int id, int distanceTraveled)
+        {
+            var trip = _tripService.GetTripPlan(id);
 
-			// Validate that the driver actually entered a distance
-			if (trip != null && distanceTraveled > 0)
-			{
-				// 1. Mark trip as completed
-				trip.tripStatus = TripStatus.COMPLETED;
-				_tripService.UpdateTripStatus(trip);
+            if (trip != null && distanceTraveled > 0)
+            {
+                trip.tripStatus = TripStatus.COMPLETED;
+                _tripService.UpdateTripStatus(trip);
 
-				// 2. Dynamic Fuel Calculation (10 km/L mileage and Rs. 100 per Liter)
-				decimal mileageKmPerLiter = 10.0m;
-				decimal costPerLiter = 100.0m;
+                decimal mileageKmPerLiter = 10.0m;
+                decimal costPerLiter = 100.0m;
+                decimal calculatedFuelQty = Math.Round((decimal)distanceTraveled / mileageKmPerLiter, 2);
+                decimal calculatedFuelCost = Math.Round(calculatedFuelQty * costPerLiter, 2);
 
-				decimal calculatedFuelQty = Math.Round((decimal)distanceTraveled / mileageKmPerLiter, 2);
-				decimal calculatedFuelCost = Math.Round(calculatedFuelQty * costPerLiter, 2);
+                var vehicleFuelHistory = _fuelService.GetFuelConsumption(trip.vehicleId);
+                int lastOdometer = vehicleFuelHistory.Any() ? vehicleFuelHistory.Max(f => f.odometerReading) : 0;
+                int newOdometerReading = lastOdometer + distanceTraveled;
 
-				// 3. Determine new Odometer reading based on past entries
-				var vehicleFuelHistory = _fuelService.GetFuelConsumption(trip.vehicleId);
-				int lastOdometer = vehicleFuelHistory.Any() ? vehicleFuelHistory.Max(f => f.odometerReading) : 0;
-				int newOdometerReading = lastOdometer + distanceTraveled;
+                var autoFuelEntry = new FuelEntry
+                {
+                    vehicleId = trip.vehicleId,
+                    fuelQuantity = calculatedFuelQty,
+                    fuelCost = calculatedFuelCost,
+                    odometerReading = newOdometerReading,
+                    entryDate = DateTime.Now
+                };
 
-				// 4. Auto-generate the Fuel Entry
-				var autoFuelEntry = new FuelEntry
-				{
-					vehicleId = trip.vehicleId,
-					fuelQuantity = (decimal)calculatedFuelQty,
-					fuelCost = (decimal)calculatedFuelCost,
-					odometerReading = newOdometerReading,
-					entryDate = DateTime.Now
-				};
+                _fuelService.AddFuelEntry(autoFuelEntry);
+                TempData["Success"] = $"Trip completed! System auto-logged {calculatedFuelQty}L of fuel for {distanceTraveled}km traveled.";
+            }
+            else if (distanceTraveled <= 0)
+            {
+                TempData["Error"] = "Distance traveled must be greater than 0 to complete the trip.";
+            }
 
-				_fuelService.AddFuelEntry(autoFuelEntry);
+            return RedirectToAction("Index");
+        }
 
-				TempData["Success"] = $"Trip completed! System auto-logged {calculatedFuelQty}L of fuel for {distanceTraveled}km traveled.";
-			}
-			else if (distanceTraveled <= 0)
-			{
-				TempData["Error"] = "Distance traveled must be greater than 0 to complete the trip.";
-			}
+        [HttpGet]
+        public IActionResult CreateTrip()
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            LoadDropdowns();
+            return View();
+        }
 
-			return RedirectToAction("Index");
-		}
-		// =================================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateTrip(Trip trip)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-		[HttpGet]
-		public IActionResult CreateTrip()
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			LoadDropdowns();
-			return View();
-		}
+            // VALIDATION: Origin and Destination must not be the same
+            if (!string.IsNullOrEmpty(trip.origin) && !string.IsNullOrEmpty(trip.destination))
+            {
+                if (trip.origin.Trim().Equals(trip.destination.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("destination", "Destination cannot be the same as the Origin location.");
+                }
+            }
 
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult CreateTrip(Trip trip)
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			ModelState.Remove("Vehicle");
-			ModelState.Remove("Driver");
+            ModelState.Remove("Vehicle");
+            ModelState.Remove("Driver");
 
-			var fleetVehicle = _vehicleService.GetVehicleDetails(trip.vehicleId);
-			if (fleetVehicle != null && fleetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
-			{
-				ModelState.AddModelError("vehicleId", "DENIED: This vehicle is under maintenance.");
-			}
+            var fleetVehicle = _vehicleService.GetVehicleDetails(trip.vehicleId);
+            if (fleetVehicle != null && fleetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
+            {
+                ModelState.AddModelError("vehicleId", "DENIED: This vehicle is under maintenance.");
+            }
 
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_tripService.CreateTrip(trip);
-					TempData["Success"] = "Trip created successfully.";
-					return RedirectToAction("Index");
-				}
-				catch (Exception ex)
-				{
-					ModelState.AddModelError(string.Empty, "System Error: " + ex.Message);
-				}
-			}
-			LoadDropdowns();
-			return View(trip);
-		}
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _tripService.CreateTrip(trip);
+                    TempData["Success"] = "Trip created successfully.";
+                    return RedirectToAction("Index");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError(string.Empty, "System Error: " + ex.Message);
+                }
+            }
+            LoadDropdowns();
+            return View(trip);
+        }
 
-		[HttpGet]
-		public IActionResult GetTripPlan(int id)
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
-			var tripData = _tripService.GetTripPlan(id);
-			if (tripData == null) return NotFound();
-			return View(tripData);
-		}
+        [HttpGet]
+        public IActionResult UpdateTripStatus(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-		[HttpGet]
-		public IActionResult UpdateTripStatus(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			var tripData = _tripService.GetTripPlan(id);
-			if (tripData == null) return NotFound();
-			LoadDropdowns();
-			return View(tripData);
-		}
+            var trip = _tripService.GetTripPlan(id);
+            if (trip == null) return NotFound();
 
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public IActionResult UpdateTripStatus(Trip routeModel)
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			ModelState.Remove("Vehicle");
-			ModelState.Remove("Driver");
+            LoadDropdowns();
+            return View(trip);
+        }
 
-			var selectedVehicle = _vehicleService.GetVehicleDetails(routeModel.vehicleId);
-			if (selectedVehicle != null && selectedVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
-			{
-				ModelState.AddModelError("vehicleId", "This vehicle is currently under service.");
-			}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateTripStatus(Trip trip)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
 
-			if (ModelState.IsValid)
-			{
-				try
-				{
-					_tripService.UpdateTripStatus(routeModel);
-					TempData["Success"] = "Trip updated successfully.";
-					return RedirectToAction("Index");
-				}
-				catch (Exception ex)
-				{
-					ModelState.AddModelError(string.Empty, "System Error: " + ex.Message);
-				}
-			}
-			LoadDropdowns();
-			return View(routeModel);
-		}
+            // VALIDATION: Origin and Destination must not be the same
+            if (!string.IsNullOrEmpty(trip.origin) && !string.IsNullOrEmpty(trip.destination))
+            {
+                if (trip.origin.Trim().Equals(trip.destination.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("destination", "Destination cannot be the same as the Origin location.");
+                }
+            }
 
-		[HttpGet]
-		public IActionResult Delete(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			var tripData = _tripService.GetTripPlan(id);
-			if (tripData == null) return NotFound();
-			return View(tripData);
-		}
+            ModelState.Remove("Vehicle");
+            ModelState.Remove("Driver");
 
-		[HttpPost, ActionName("Delete")]
-		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			try
-			{
-				var tripData = _tripService.GetTripPlan(id);
-				if (tripData != null && tripData.tripStatus == TripStatus.IN_PROGRESS)
-				{
-					TempData["Error"] = "Cannot delete a trip that is currently IN_PROGRESS.";
-					return RedirectToAction("Index");
-				}
-				_tripService.DeleteTrip(id);
-				TempData["Success"] = "Trip deleted.";
-				return RedirectToAction("Index");
-			}
-			catch (Exception ex)
-			{
-				TempData["Error"] = "Error deleting trip: " + ex.Message;
-				return RedirectToAction("Index");
-			}
-		}
-	}
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _tripService.UpdateTripStatus(trip);
+                    TempData["Success"] = "Trip details updated successfully.";
+                    return RedirectToAction("Index");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "Update failed: " + ex.Message);
+                }
+            }
+
+            LoadDropdowns();
+            return View(trip);
+        }
+
+        public IActionResult GetTripPlan(int id)
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
+            var tripData = _tripService.GetTripPlan(id);
+            if (tripData == null) return NotFound();
+            return View(tripData);
+        }
+
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            var tripData = _tripService.GetTripPlan(id);
+            if (tripData == null) return NotFound();
+            return View(tripData);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            if (!CanEdit()) return RedirectToAction("Index");
+            try
+            {
+                var tripData = _tripService.GetTripPlan(id);
+                if (tripData != null && tripData.tripStatus == TripStatus.IN_PROGRESS)
+                {
+                    TempData["Error"] = "Cannot delete a trip that is currently IN_PROGRESS.";
+                    return RedirectToAction("Index");
+                }
+                _tripService.DeleteTrip(id);
+                TempData["Success"] = "Trip deleted.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error deleting trip: " + ex.Message;
+            }
+            return RedirectToAction("Index");
+        }
+    }
 }

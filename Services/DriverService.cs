@@ -1,17 +1,30 @@
 using TransportationManagement.Interfaces;
 using TransportationManagement.Models;
+
 namespace TransportationManagement.Services
 {
     public class DriverService
     {
-        private readonly IDriverRepository _repo;
-        public DriverService(IDriverRepository repo) { _repo = repo; }
-        public List<Driver> GetAllDrivers() => _repo.GetAllDrivers();
-        public Driver? GetDriverDetails(int id) => _repo.GetDriverById(id);
-        public Driver? GetDriverByUserId(int userId) => _repo.GetDriverByUserId(userId);
-        public void AddDriver(Driver d) => _repo.AddDriver(d);
-        public void UpdateDriver(Driver d) => _repo.UpdateDriver(d);
-        public void DeleteDriver(int id) => _repo.DeleteDriver(id);
-        public List<Trip> GetAssignedTrips(int driverId, ITripRepository tripRepo) => tripRepo.GetTripsByDriverId(driverId);
+        private readonly IDriverRepository _driverRepo;
+        private readonly ITripRepository _tripRepo; // Injected for security & decoupling
+
+        public DriverService(IDriverRepository driverRepo, ITripRepository tripRepo)
+        {
+            _driverRepo = driverRepo;
+            _tripRepo = tripRepo;
+        }
+
+        public List<Driver> GetAllDrivers() => _driverRepo.GetAllDrivers();
+        public Driver? GetDriverDetails(int id) => _driverRepo.GetDriverById(id);
+        public Driver? GetDriverByUserId(int userId) => _driverRepo.GetDriverByUserId(userId);
+        public void AddDriver(Driver d) => _driverRepo.AddDriver(d);
+        public void UpdateDriver(Driver d) => _driverRepo.UpdateDriver(d);
+        public void DeleteDriver(int id) => _driverRepo.DeleteDriver(id);
+
+        // Logic: The Controller no longer needs to pass the repository in
+        public List<Trip> GetAssignedTrips(int driverId)
+        {
+            return _tripRepo.GetTripsByDriverId(driverId);
+        }
     }
 }
