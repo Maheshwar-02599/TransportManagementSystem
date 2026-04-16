@@ -113,7 +113,7 @@
                                 <a asp-action="UpdateTripStatus" asp-route-id="@t.tripId" class="btn btn-light btn-sm text-warning rounded-circle shadow-sm me-1" title="Edit"><i class="fas fa-edit"></i></a>
                                 <a asp-action="Delete" asp-route-id="@t.tripId" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete"><i class="fas fa-trash"></i></a>
                             }
-
+@* 
                             @if (Context.Session.GetString("Role") == "Driver")
                             {
                                 @if (t.tripStatus.ToString() == "PLANNED")
@@ -128,7 +128,7 @@
                                         <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-stop me-1"></i>End</button>
                                     </form>
                                 }
-                            }
+                            } *@
                         </td>
                     </tr>
                 }
