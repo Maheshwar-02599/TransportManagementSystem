@@ -132,14 +132,9 @@ namespace TransportationManagement.Controllers
 
 			var entry = await _fuelService.GetFuelEntryByIdAsync(id);
 			if (entry == null) return NotFound();
+			return View(entry);
 		}
 
-        public IActionResult GetFuelConsumption(int vehicleId)
-        {
-            if (!CanView()) return RedirectToAction("Login", "Account");
-            var entries = _fuelService.GetFuelConsumption(vehicleId);
-            ViewBag.VehicleId = vehicleId;
-            return View(entries);
-        }
+        
     }
 }

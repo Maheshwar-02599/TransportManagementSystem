@@ -67,9 +67,8 @@ namespace TransportationManagement.Controllers
 				return View(model);
 			}
 
-			// Fixed: Async database check
-			var exists = await _context.Users.AnyAsync(u => u.Username == model.Username);
-			if (exists)
+			
+			if (await _accountService.IsUsernameTaken(model.Username))
 			{
 				ModelState.AddModelError("Username", "This email is already registered.");
 				return View(model);
@@ -89,7 +88,7 @@ namespace TransportationManagement.Controllers
 				model.Driver.UserId = user.Id;
 				await _driverService.AddDriverAsync(model.Driver);
 
-				TempData["Success"] = "Driver and login created successfully.";
+				TempData["Success"] = "Driver created successfully.";
 				return RedirectToAction("Index");
 			}
 			catch (Exception ex)
