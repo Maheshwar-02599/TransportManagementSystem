@@ -6,7 +6,7 @@ namespace TransportationManagement.Services
     public class DriverService
     {
         private readonly IDriverRepository _driverRepo;
-        private readonly ITripRepository _tripRepo; // Injected for security & decoupling
+        private readonly ITripRepository _tripRepo; // Injected for security 
 
         public DriverService(IDriverRepository driverRepo, ITripRepository tripRepo)
         {

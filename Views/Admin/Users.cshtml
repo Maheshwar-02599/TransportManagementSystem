@@ -20,7 +20,7 @@
                 <tr>
                     <th class="ps-4 py-3 border-0">#</th>
                     <th class="py-3 border-0">Email (Username)</th>
-                    <th class="py-3 border-0">Password (Hashed)</th>
+                    @* <th class="py-3 border-0">Password (Hashed)</th> *@
                     <th class="py-3 border-0">Role</th>
                     <th class="text-end pe-4 py-3 border-0">Actions</th>
                 </tr>
@@ -34,9 +34,9 @@
                     <tr>
                         <td class="ps-4 py-3 text-muted">@i++</td>
                         <td class="py-3 fw-semibold">@u.Username</td>
-                        <td class="py-3"><span class="badge bg-light text-muted border font-monospace">@u.Password.Substring(0, 15)...</span></td>
+                        @* <td class="py-3"><span class="badge bg-light text-muted border font-monospace">@u.Password.Substring(0, 15)...</span></td> *@
                         <td class="py-3">
-                            <span class="badge rounded-pill @(u.Role == "Admin" ? "bg-primary" : u.Role == "FleetManager" ? "bg-secondary" : "bg-dark")">@u.Role</span>
+                            <span class="badge rounded-pill @(u.Role == "Admin" ? "bg-primary" : u.Role == "FleetManager" ? "bg-danger" : u.Role == "Driver" ? "bg-info" :"bg-success")">@u.Role</span>
                         </td>
                         <td class="text-end pe-4 py-3">
                             <a asp-action="EditUser" asp-route-id="@u.Id" class="btn btn-light btn-sm text-warning rounded-circle me-1 shadow-sm" title="Edit"><i class="fas fa-edit"></i></a>
