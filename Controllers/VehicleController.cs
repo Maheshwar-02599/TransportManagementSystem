@@ -7,7 +7,7 @@ namespace TransportationManagement.Controllers
 	public class VehicleController : Controller
 	{
 		private readonly VehicleService _vehicleSvc;
-		private readonly TripService _routeSvc; // Injected to check active routes
+		private readonly TripService _routeSvc;
 
 		public VehicleController(VehicleService vehicleService, TripService tripService)
 		{
@@ -15,54 +15,52 @@ namespace TransportationManagement.Controllers
 			_routeSvc = tripService;
 		}
 
-		// --- NEW RBAC SECURITY LOGIC ---
-
-		// 1. View Access: Both Admin and FleetManager can read data
 		private bool CanView()
 		{
 			var userRole = HttpContext.Session.GetString("Role");
 			return userRole == "Admin" || userRole == "FleetManager";
 		}
 
-		// 2. Edit Access: ONLY FleetManager can perform CRUD operations
 		private bool CanEdit()
 		{
 			var userRole = HttpContext.Session.GetString("Role");
 			return userRole == "FleetManager";
 		}
 
-		// -------------------------------
-
-		public IActionResult Index()
+		// 1. ADDED ASYNC
+		public async Task<IActionResult> Index()
 		{
-			if (!CanView()) return RedirectToAction("Login", "Account"); // Admin can view
+			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			// Fetch active trips to determine busy vehicles dynamically
-			var unfinishedRoutes = _routeSvc.GetAllTrips()
+			// 2. ADDED AWAIT
+			var allTrips = await _routeSvc.GetAllTripsAsync();
+			var unfinishedRoutes = allTrips
 									.Where(t => t.tripStatus != TripStatus.COMPLETED)
 									.ToList();
 
 			ViewBag.BusyVehicleIds = unfinishedRoutes.Select(t => t.vehicleId).ToList();
 
-			return View(_vehicleSvc.GetAllVehicles());
+			// 3. ADDED AWAIT
+			var vehicles = await _vehicleSvc.GetAllVehiclesAsync();
+			return View(vehicles);
 		}
 
 		[HttpGet]
 		public IActionResult AddVehicle()
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Kicks Admin back to the list
+			if (!CanEdit()) return RedirectToAction("Index");
 			return View();
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult AddVehicle(Vehicle vehicleData)
+		public async Task<IActionResult> AddVehicle(Vehicle vehicleData)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
 			if (ModelState.IsValid)
 			{
-				_vehicleSvc.AddVehicle(vehicleData);
+				await _vehicleSvc.AddVehicleAsync(vehicleData);
 				TempData["Success"] = "Vehicle added successfully.";
 				return RedirectToAction("Index");
 			}
@@ -70,40 +68,41 @@ namespace TransportationManagement.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult GetVehicleDetails(int id)
+		public async Task<IActionResult> GetVehicleDetails(int id)
 		{
-			if (!CanView()) return RedirectToAction("Login", "Account"); // Admin can view
+			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			var vehicleData = _vehicleSvc.GetVehicleDetails(id);
+			var vehicleData = await _vehicleSvc.GetVehicleDetailsAsync(id);
 			if (vehicleData == null) return NotFound();
 
-			// Dynamic check for details view
-			ViewBag.IsOnActiveTrip = _routeSvc.GetAllTrips()
-									  .Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
+			var allTrips = await _routeSvc.GetAllTripsAsync();
+			ViewBag.IsOnActiveTrip = allTrips.Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
 
 			return View(vehicleData);
 		}
 
 		[HttpGet]
-		public IActionResult UpdateVehicle(int id)
+		public async Task<IActionResult> UpdateVehicle(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Kicks Admin out
-			var vehicleData = _vehicleSvc.GetVehicleDetails(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+
+			var vehicleData = await _vehicleSvc.GetVehicleDetailsAsync(id);
 			if (vehicleData == null) return NotFound();
+
 			return View(vehicleData);
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult UpdateVehicle(Vehicle vehicleData)
+		public async Task<IActionResult> UpdateVehicle(Vehicle vehicleData)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
 			if (ModelState.IsValid)
 			{
 				try
 				{
-					_vehicleSvc.UpdateVehicle(vehicleData);
+					await _vehicleSvc.UpdateVehicleAsync(vehicleData);
 					TempData["Success"] = "Vehicle updated successfully.";
 					return RedirectToAction("Index");
 				}
@@ -116,43 +115,39 @@ namespace TransportationManagement.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult Delete(int id)
+		public async Task<IActionResult> Delete(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Kicks Admin out
-			var vehicleData = _vehicleSvc.GetVehicleDetails(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+
+			var vehicleData = await _vehicleSvc.GetVehicleDetailsAsync(id);
 			if (vehicleData == null) return NotFound();
+
 			return View(vehicleData);
 		}
 
 		[HttpPost, ActionName("Delete")]
 		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
+		public async Task<IActionResult> DeleteConfirmed(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
-			// ... (Existing pre-deletion checks - ON_TRIP, Historical Records) ...
-
-			// 1. PRE-CHECK: Is it actually on a trip right now?
-			bool isActivelyDeployed = _routeSvc.GetAllTrips()
-				.Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
+			var allTrips = await _routeSvc.GetAllTripsAsync();
+			bool isActivelyDeployed = allTrips.Any(t => t.vehicleId == id && t.tripStatus != TripStatus.COMPLETED);
 
 			if (isActivelyDeployed)
 			{
-				// Block deletion and tell them it's on a trip
 				TempData["Error"] = "Constraint Failed: Cannot delete this vehicle because it is currently ON_TRIP.";
 				return RedirectToAction("Index");
 			}
 
-			// 2. Database Deletion Attempt
 			try
 			{
-				_vehicleSvc.DeleteVehicle(id);
+				await _vehicleSvc.DeleteVehicleAsync(id);
 				TempData["Success"] = "Vehicle deleted successfully.";
 			}
 			catch (Exception)
 			{
-				// If we get here, it wasn't on a trip, but the database still blocked it (e.g., past fuel records)
-				TempData["Error"] = "Cannot delete this vehicle because it has associated historical records in the database (Trips, Fuel, or Maintenance).";
+				TempData["Error"] = "Cannot delete this vehicle because it has associated historical records in the database.";
 			}
 
 			return RedirectToAction("Index");

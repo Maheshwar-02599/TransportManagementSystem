@@ -1,4 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using TransportationManagement.Data;
 using TransportationManagement.Interfaces;
 using TransportationManagement.Models;
@@ -10,71 +14,64 @@ namespace TransportationManagement.Repositories
 		private readonly ApplicationDbContext _context;
 		public TripRepository(ApplicationDbContext context) { _context = context; }
 
-		public List<Trip> GetAllTrips() => _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).ToList();
+		public async Task<List<Trip>> GetAllTripsAsync()
+			=> await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).ToListAsync();
 
-		public Trip? GetTripById(int tripId) => _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).FirstOrDefault(t => t.tripId == tripId);
+		public async Task<Trip?> GetTripByIdAsync(int tripId)
+			=> await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).FirstOrDefaultAsync(t => t.tripId == tripId);
 
-		public List<Trip> GetTripsByDriverId(int driverId) => _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).Where(t => t.driverId == driverId).ToList();
+		public async Task<List<Trip>> GetTripsByDriverIdAsync(int driverId)
+			=> await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).Where(t => t.driverId == driverId).ToListAsync();
 
-		public void AddTrip(Trip tripDetails)
+		public async Task AddTripAsync(Trip tripDetails)
 		{
-			// NEW CONSTRAINT: Prevent assigning an IN_SERVICE vehicle
-			var targetVehicle = _context.Vehicles.AsNoTracking().FirstOrDefault(v => v.vehicleId == tripDetails.vehicleId);
+			var targetVehicle = await _context.Vehicles.AsNoTracking().FirstOrDefaultAsync(v => v.vehicleId == tripDetails.vehicleId);
 			if (targetVehicle != null && targetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
 			{
 				throw new Exception("Constraint Failed: The selected vehicle is currently IN_SERVICE and cannot be dispatched.");
 			}
 
-			var driverOccupied = _context.Trips.Any(t => t.driverId == tripDetails.driverId && t.tripStatus != TripStatus.COMPLETED);
-			if (driverOccupied)
-			{
-				throw new Exception("Driver already has an active trip!");
-			}
+			var driverOccupied = await _context.Trips.AnyAsync(t => t.driverId == tripDetails.driverId && t.tripStatus != TripStatus.COMPLETED);
+			if (driverOccupied) throw new Exception("Driver already has an active trip!");
 
-			var vehicleOccupied = _context.Trips.Any(t => t.vehicleId == tripDetails.vehicleId && t.tripStatus != TripStatus.COMPLETED);
-			if (vehicleOccupied)
-			{
-				throw new Exception("Vehicle is already in use for another active trip!");
-			}
+			var vehicleOccupied = await _context.Trips.AnyAsync(t => t.vehicleId == tripDetails.vehicleId && t.tripStatus != TripStatus.COMPLETED);
+			if (vehicleOccupied) throw new Exception("Vehicle is already in use for another active trip!");
 
-			_context.Trips.Add(tripDetails);
-			_context.SaveChanges();
+			await _context.Trips.AddAsync(tripDetails);
+			await _context.SaveChangesAsync();
 		}
 
-		public void UpdateTrip(Trip tripDetails)
+		public async Task UpdateTripAsync(Trip tripDetails)
 		{
-			var currentTripRecord = _context.Trips.AsNoTracking().FirstOrDefault(t => t.tripId == tripDetails.tripId);
+			var currentTripRecord = await _context.Trips.AsNoTracking().FirstOrDefaultAsync(t => t.tripId == tripDetails.tripId);
 			if (currentTripRecord == null) throw new Exception("Trip not found");
 
-			// NEW CONSTRAINT: Check IN_SERVICE status on update
-			var targetVehicle = _context.Vehicles.AsNoTracking().FirstOrDefault(v => v.vehicleId == tripDetails.vehicleId);
+			var targetVehicle = await _context.Vehicles.AsNoTracking().FirstOrDefaultAsync(v => v.vehicleId == tripDetails.vehicleId);
 			if (targetVehicle != null && targetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
 			{
 				throw new Exception("Constraint Failed: The selected vehicle is currently IN_SERVICE and cannot be dispatched.");
 			}
 
-			// Check ONLY if driver changed
 			if (currentTripRecord.driverId != tripDetails.driverId)
 			{
-				var driverOccupied = _context.Trips.Any(t => t.driverId == tripDetails.driverId && t.tripId != tripDetails.tripId && t.tripStatus != TripStatus.COMPLETED);
+				var driverOccupied = await _context.Trips.AnyAsync(t => t.driverId == tripDetails.driverId && t.tripId != tripDetails.tripId && t.tripStatus != TripStatus.COMPLETED);
 				if (driverOccupied) throw new Exception("Driver already has an active trip!");
 			}
 
-			// Check ONLY if vehicle changed
 			if (currentTripRecord.vehicleId != tripDetails.vehicleId)
 			{
-				var vehicleOccupied = _context.Trips.Any(t => t.vehicleId == tripDetails.vehicleId && t.tripId != tripDetails.tripId && t.tripStatus != TripStatus.COMPLETED);
+				var vehicleOccupied = await _context.Trips.AnyAsync(t => t.vehicleId == tripDetails.vehicleId && t.tripId != tripDetails.tripId && t.tripStatus != TripStatus.COMPLETED);
 				if (vehicleOccupied) throw new Exception("Vehicle is already in use for another active trip!");
 			}
 
 			_context.Trips.Update(tripDetails);
-			_context.SaveChanges();
+			await _context.SaveChangesAsync();
 		}
 
-		public void DeleteTrip(int tripId)
+		public async Task DeleteTripAsync(int tripId)
 		{
-			var t = _context.Trips.Find(tripId);
-			if (t != null) { _context.Trips.Remove(t); _context.SaveChanges(); }
+			var t = await _context.Trips.FindAsync(tripId);
+			if (t != null) { _context.Trips.Remove(t); await _context.SaveChangesAsync(); }
 		}
 	}
 }

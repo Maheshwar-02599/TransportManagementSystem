@@ -1,28 +1,47 @@
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using TransportationManagement.Data;
 using TransportationManagement.Interfaces;
 using TransportationManagement.Models;
 
 namespace TransportationManagement.Repositories
 {
-    public class DriverRepository : IDriverRepository
-    {
-        private readonly ApplicationDbContext _context;
-        public DriverRepository(ApplicationDbContext context) { _context = context; }
+	public class DriverRepository : IDriverRepository
+	{
+		private readonly ApplicationDbContext _context;
+		public DriverRepository(ApplicationDbContext context) { _context = context; }
 
-        public List<Driver> GetAllDrivers() => _context.Drivers.ToList();
+		public async Task<List<Driver>> GetAllDriversAsync()
+			=> await _context.Drivers.ToListAsync();
 
-        public Driver? GetDriverById(int driverId) => _context.Drivers.Find(driverId);
+		public async Task<Driver?> GetDriverByIdAsync(int driverId)
+			=> await _context.Drivers.FindAsync(driverId);
 
-        public Driver? GetDriverByUserId(int userId) => _context.Drivers.FirstOrDefault(d => d.UserId == userId);
+		public async Task<Driver?> GetDriverByUserIdAsync(int userId)
+			=> await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == userId);
 
-        public void AddDriver(Driver driver) { _context.Drivers.Add(driver); _context.SaveChanges(); }
+		public async Task AddDriverAsync(Driver driver)
+		{
+			await _context.Drivers.AddAsync(driver);
+			await _context.SaveChangesAsync();
+		}
 
-        public void UpdateDriver(Driver driver) { _context.Drivers.Update(driver); _context.SaveChanges(); }
+		public async Task UpdateDriverAsync(Driver driver)
+		{
+			_context.Drivers.Update(driver);
+			await _context.SaveChangesAsync();
+		}
 
-        public void DeleteDriver(int driverId)
-        {
-            var d = _context.Drivers.Find(driverId);
-            if (d != null) { _context.Drivers.Remove(d); _context.SaveChanges(); }
-        }
-    }
+		public async Task DeleteDriverAsync(int driverId)
+		{
+			var d = await _context.Drivers.FindAsync(driverId);
+			if (d != null)
+			{
+				_context.Drivers.Remove(d);
+				await _context.SaveChangesAsync();
+			}
+		}
+	}
 }

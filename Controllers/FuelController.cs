@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
@@ -15,123 +16,120 @@ namespace TransportationManagement.Controllers
 			_vehicleService = vehicleService;
 		}
 
-		// --- NEW RBAC SECURITY LOGIC ---
-
-		// 1. View Access: Both Admin and FleetManager can read data & reports
 		private bool CanView()
 		{
 			var r = HttpContext.Session.GetString("Role");
 			return r == "Admin" || r == "FleetManager";
 		}
 
-		// 2. Edit Access: ONLY FleetManager can perform CRUD operations
 		private bool CanEdit()
 		{
 			var r = HttpContext.Session.GetString("Role");
 			return r == "FleetManager";
 		}
 
-		// -------------------------------
-
-		private void LoadVehicles()
+		// Made async to await the VehicleService
+		private async Task LoadVehicles()
 		{
-			var vehicles = _vehicleService.GetAllVehicles();
+			var vehicles = await _vehicleService.GetAllVehiclesAsync();
 			ViewBag.Vehicles = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicles, "vehicleId", "vehicleNumber");
 		}
 
-		public IActionResult Index()
+		public async Task<IActionResult> Index()
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
-			return View(_fuelService.GetAllFuelEntries());
+			var entries = await _fuelService.GetAllFuelEntriesAsync();
+			return View(entries);
 		}
 
 		[HttpGet]
-		public IActionResult AddFuelEntry()
+		public async Task<IActionResult> AddFuelEntry()
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			LoadVehicles();
+			if (!CanEdit()) return RedirectToAction("Index");
+			await LoadVehicles();
 			return View();
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult AddFuelEntry(FuelEntry fuelEntry)
+		public async Task<IActionResult> AddFuelEntry(FuelEntry fuelEntry)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 			if (ModelState.IsValid)
 			{
-				_fuelService.AddFuelEntry(fuelEntry);
+				await _fuelService.AddFuelEntryAsync(fuelEntry);
 				TempData["Success"] = "Fuel entry added.";
 				return RedirectToAction("Index");
 			}
-			LoadVehicles();
+			await LoadVehicles();
 			return View(fuelEntry);
 		}
 
-		public IActionResult GetFuelConsumption(int vehicleId)
+		public async Task<IActionResult> GetFuelConsumption(int vehicleId)
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
-			var entries = _fuelService.GetFuelConsumption(vehicleId);
+			var entries = await _fuelService.GetFuelConsumptionAsync(vehicleId);
 			ViewBag.VehicleId = vehicleId;
 			return View(entries);
 		}
 
-		// Admins and Fleet Managers can both generate reports!
-		public IActionResult GenerateFuelReport()
+		public async Task<IActionResult> GenerateFuelReport()
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
-			return View(_fuelService.GenerateFuelReport());
+			var report = await _fuelService.GenerateFuelReportAsync();
+			return View(report);
 		}
 
 		[HttpGet]
-		public IActionResult Edit(int id)
+		public async Task<IActionResult> Edit(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var entry = _fuelService.GetFuelEntryById(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			var entry = await _fuelService.GetFuelEntryByIdAsync(id);
 			if (entry == null) return NotFound();
-			LoadVehicles();
+			await LoadVehicles();
 			return View(entry);
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult Edit(FuelEntry fuelEntry)
+		public async Task<IActionResult> Edit(FuelEntry fuelEntry)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 			if (ModelState.IsValid)
 			{
-				_fuelService.UpdateFuelEntry(fuelEntry);
+				await _fuelService.UpdateFuelEntryAsync(fuelEntry);
 				TempData["Success"] = "Fuel entry updated.";
 				return RedirectToAction("Index");
 			}
-			LoadVehicles();
+			await LoadVehicles();
 			return View(fuelEntry);
 		}
 
 		[HttpGet]
-		public IActionResult Delete(int id)
+		public async Task<IActionResult> Delete(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var entry = _fuelService.GetFuelEntryById(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			var entry = await _fuelService.GetFuelEntryByIdAsync(id);
 			if (entry == null) return NotFound();
 			return View(entry);
 		}
 
 		[HttpPost, ActionName("Delete")]
 		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
+		public async Task<IActionResult> DeleteConfirmed(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			_fuelService.DeleteFuelEntry(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			await _fuelService.DeleteFuelEntryAsync(id);
 			TempData["Success"] = "Fuel entry deleted.";
 			return RedirectToAction("Index");
 		}
+
 		[HttpGet]
-		public IActionResult GetFuelEntryDetails(int id)
+		public async Task<IActionResult> GetFuelEntryDetails(int id)
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			var entry = _fuelService.GetFuelEntryById(id);
+			var entry = await _fuelService.GetFuelEntryByIdAsync(id);
 			if (entry == null) return NotFound();
 
 			return View(entry);

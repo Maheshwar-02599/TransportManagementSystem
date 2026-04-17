@@ -1,13 +1,16 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TransportationManagement.Models;
+
 namespace TransportationManagement.Interfaces
 {
-    public interface IMaintenanceRepository
-    {
-        List<MaintenanceRecord> GetAllMaintenanceRecords();
-        MaintenanceRecord? GetMaintenanceById(int maintenanceId);
-        List<MaintenanceRecord> GetMaintenanceByVehicleId(int vehicleId);
-        void AddMaintenance(MaintenanceRecord record);
-        void UpdateMaintenance(MaintenanceRecord record);
-        void DeleteMaintenance(int maintenanceId);
-    }
+	public interface IMaintenanceRepository
+	{
+		Task<List<MaintenanceRecord>> GetAllMaintenanceRecordsAsync();
+		Task<MaintenanceRecord?> GetMaintenanceByIdAsync(int maintenanceId);
+		Task<List<MaintenanceRecord>> GetMaintenanceByVehicleIdAsync(int vehicleId);
+		Task AddMaintenanceAsync(MaintenanceRecord record);
+		Task UpdateMaintenanceAsync(MaintenanceRecord record);
+		Task DeleteMaintenanceAsync(int maintenanceId);
+	}
 }

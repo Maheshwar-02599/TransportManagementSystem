@@ -12,7 +12,6 @@ namespace TransportationManagement.Data
         {
         }
 
-        // Only these 6 tables will be created in your database
         public DbSet<User> Users { get; set; }
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<Driver> Drivers { get; set; }

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TransportationManagement.Models;
@@ -16,154 +17,148 @@ namespace TransportationManagement.Controllers
 			_vehicleService = vehicleService;
 		}
 
-		// --- NEW RBAC SECURITY LOGIC ---
-
-		// 1. View Access: Admin, FleetManager, and MaintenanceEngineer
 		private bool CanView()
 		{
 			var r = HttpContext.Session.GetString("Role");
 			return r == "Admin" || r == "FleetManager" || r == "MaintenanceEngineer";
 		}
 
-		// 2. Edit Access: ONLY FleetManager and MaintenanceEngineer
 		private bool CanEdit()
 		{
 			var r = HttpContext.Session.GetString("Role");
 			return r == "FleetManager" || r == "MaintenanceEngineer";
 		}
 
-		// -------------------------------
-
-		private void LoadVehicles()
+		private async Task LoadVehicles()
 		{
-			var vehicles = _vehicleService.GetAllVehicles();
+			var vehicles = await _vehicleService.GetAllVehiclesAsync();
 			ViewBag.Vehicles = new SelectList(vehicles, "vehicleId", "vehicleNumber");
 		}
 
-		public IActionResult Index()
+		public async Task<IActionResult> Index()
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
-			return View(_maintenanceService.GetAllMaintenanceRecords());
+			var records = await _maintenanceService.GetAllMaintenanceRecordsAsync();
+			return View(records);
 		}
 
 		[HttpGet]
-		public IActionResult ScheduleMaintenance()
+		public async Task<IActionResult> ScheduleMaintenance()
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			LoadVehicles();
+			if (!CanEdit()) return RedirectToAction("Index");
+			await LoadVehicles();
 			return View();
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult ScheduleMaintenance(MaintenanceRecord record)
+		public async Task<IActionResult> ScheduleMaintenance(MaintenanceRecord record)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
 			if (ModelState.IsValid)
 			{
-				_maintenanceService.ScheduleMaintenance(record);
+				await _maintenanceService.ScheduleMaintenanceAsync(record);
 
-				// Force the vehicle status to change in the database
-				var fleetVehicle = _vehicleService.GetVehicleDetails(record.vehicleId);
+				// Now using async Vehicle service
+				var fleetVehicle = await _vehicleService.GetVehicleDetailsAsync(record.vehicleId);
 				if (fleetVehicle != null)
 				{
 					fleetVehicle.vehiclestatus = VehicleStatus.IN_SERVICE;
-					_vehicleService.UpdateVehicle(fleetVehicle);
+					await _vehicleService.UpdateVehicleAsync(fleetVehicle);
 				}
 
 				TempData["Success"] = "Maintenance scheduled and vehicle successfully marked as IN_SERVICE.";
 				return RedirectToAction("Index");
 			}
-			LoadVehicles();
+			await LoadVehicles();
 			return View(record);
 		}
 
 		[HttpGet]
-		public IActionResult UpdateServiceRecord(int id)
+		public async Task<IActionResult> UpdateServiceRecord(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var record = _maintenanceService.GetMaintenanceById(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record == null) return NotFound();
-			LoadVehicles();
+			await LoadVehicles();
 			return View(record);
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult UpdateServiceRecord(MaintenanceRecord record)
+		public async Task<IActionResult> UpdateServiceRecord(MaintenanceRecord record)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 			if (ModelState.IsValid)
 			{
-				_maintenanceService.UpdateServiceRecord(record);
+				await _maintenanceService.UpdateServiceRecordAsync(record);
 				TempData["Success"] = "Record updated.";
 				return RedirectToAction("Index");
 			}
-			LoadVehicles();
+			await LoadVehicles();
 			return View(record);
 		}
 
-		public IActionResult GetMaintenanceHistory(int vehicleId)
+		public async Task<IActionResult> GetMaintenanceHistory(int vehicleId)
 		{
-			if (!CanView()) return RedirectToAction("Login", "Account"); // Allowed to view
-			var records = _maintenanceService.GetMaintenanceHistory(vehicleId);
+			if (!CanView()) return RedirectToAction("Login", "Account");
+			var records = await _maintenanceService.GetMaintenanceHistoryAsync(vehicleId);
 			ViewBag.VehicleId = vehicleId;
 			return View(records);
 		}
 
 		[HttpGet]
-		public IActionResult Delete(int id)
+		public async Task<IActionResult> Delete(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var record = _maintenanceService.GetMaintenanceById(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record == null) return NotFound();
 			return View(record);
 		}
 
 		[HttpPost, ActionName("Delete")]
 		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
+		public async Task<IActionResult> DeleteConfirmed(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			_maintenanceService.DeleteMaintenance(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			await _maintenanceService.DeleteMaintenanceAsync(id);
 			TempData["Success"] = "Record deleted.";
 			return RedirectToAction("Index");
 		}
 
 		[HttpGet]
-		public IActionResult GetMaintenanceDetails(int id)
+		public async Task<IActionResult> GetMaintenanceDetails(int id)
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			var record = _maintenanceService.GetMaintenanceById(id);
+			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record == null) return NotFound();
 
 			return View(record);
 		}
+
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult CompleteMaintenance(int id)
+		public async Task<IActionResult> CompleteMaintenance(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // FleetManager or MaintenanceEngineer
+			if (!CanEdit()) return RedirectToAction("Index");
 
-			var record = _maintenanceService.GetMaintenanceById(id);
+			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record != null)
 			{
-				// 1. FREEZE THE RECORD: Safely append a hidden completed flag to the remarks
 				if (string.IsNullOrEmpty(record.remarks))
 					record.remarks = "[COMPLETED]";
 				else if (!record.remarks.Contains("[COMPLETED]"))
 					record.remarks += " [COMPLETED]";
 
-				_maintenanceService.UpdateServiceRecord(record);
+				await _maintenanceService.UpdateServiceRecordAsync(record);
 
-				// 2. FREE THE VEHICLE: Find the vehicle and set it back to ACTIVE!
-				var fleetVehicle = _vehicleService.GetVehicleDetails(record.vehicleId);
+				var fleetVehicle = await _vehicleService.GetVehicleDetailsAsync(record.vehicleId);
 				if (fleetVehicle != null && fleetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
 				{
 					fleetVehicle.vehiclestatus = VehicleStatus.ACTIVE;
-					_vehicleService.UpdateVehicle(fleetVehicle);
+					await _vehicleService.UpdateVehicleAsync(fleetVehicle);
 				}
 
 				TempData["Success"] = "Service completed! Record frozen and Vehicle is now ACTIVE.";

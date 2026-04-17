@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 using TransportationManagement.Data;
@@ -8,7 +12,7 @@ namespace TransportationManagement.Controllers
 {
 	public class DriverController : Controller
 	{
-        private readonly DriverService _driverService;
+		private readonly DriverService _driverService;
 		private readonly TripService _tripService;
 		private readonly ApplicationDbContext _context;
 
@@ -19,60 +23,52 @@ namespace TransportationManagement.Controllers
 			_context = context;
 		}
 
-		// --- NEW RBAC SECURITY LOGIC ---
-
-		// 1. View Access: Both Admin and FleetManager can read data
 		private bool CanView()
 		{
 			var role = HttpContext.Session.GetString("Role");
 			return role == "Admin" || role == "FleetManager";
 		}
 
-		// 2. Edit Access: ONLY FleetManager can perform CRUD operations
 		private bool CanEdit()
 		{
 			var role = HttpContext.Session.GetString("Role");
 			return role == "FleetManager";
 		}
 
-		// -------------------------------
-
-		public IActionResult Index()
+		public async Task<IActionResult> Index()
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			// Fetch active trips to determine busy drivers dynamically
-			var activeRoutes = _tripService.GetAllTrips()
-									.Where(t => t.tripStatus != TripStatus.COMPLETED)
-									.ToList();
+			// Fixed: Using the Async version
+			var allTrips = await _tripService.GetAllTripsAsync();
+			var activeRoutes = allTrips.Where(t => t.tripStatus != TripStatus.COMPLETED).ToList();
 
-			// Pass the list of busy driver IDs to the view
 			ViewBag.EngagedStaffIds = activeRoutes.Select(t => t.driverId).ToList();
 
-			return View(_driverService.GetAllDrivers());
+			var drivers = await _driverService.GetAllDriversAsync();
+			return View(drivers);
 		}
 
-        [HttpGet]
+		[HttpGet]
 		public IActionResult AddDriver()
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 			return View(new CreateDriverViewModel());
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult AddDriver(CreateDriverViewModel model)
+		public async Task<IActionResult> AddDriver(CreateDriverViewModel model)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
-			// Validate both nested Driver and credentials
 			if (!ModelState.IsValid)
 			{
 				return View(model);
 			}
 
-			// Check duplicate user email
-			var exists = _context.Users.Any(u => u.Username == model.Username);
+			// Fixed: Async database check
+			var exists = await _context.Users.AnyAsync(u => u.Username == model.Username);
 			if (exists)
 			{
 				ModelState.AddModelError("Username", "This email is already registered.");
@@ -81,19 +77,17 @@ namespace TransportationManagement.Controllers
 
 			try
 			{
-                // 1. Create user account for driver (so we get the Id)
 				var user = new User
 				{
 					Username = model.Username,
 					Password = Data.PasswordHelper.HashPassword(model.Password),
 					Role = "Driver"
 				};
-				_context.Users.Add(user);
-				_context.SaveChanges();
+				await _context.Users.AddAsync(user);
+				await _context.SaveChangesAsync();
 
-				// 2. Add driver and link to user
 				model.Driver.UserId = user.Id;
-				_driverService.AddDriver(model.Driver);
+				await _driverService.AddDriverAsync(model.Driver);
 
 				TempData["Success"] = "Driver and login created successfully.";
 				return RedirectToAction("Index");
@@ -106,15 +100,16 @@ namespace TransportationManagement.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult GetDriverDetails(int id)
+		public async Task<IActionResult> GetDriverDetails(int id)
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
-			var driverData = _driverService.GetDriverDetails(id);
+
+			var driverData = await _driverService.GetDriverDetailsAsync(id);
 			if (driverData == null) return NotFound();
 
-			// Dynamic check for details view
-			ViewBag.IsCurrentlyDeployed = _tripService.GetAllTrips()
-										  .Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
+			// Fixed: Using the Async version
+			var allTrips = await _tripService.GetAllTripsAsync();
+			ViewBag.IsCurrentlyDeployed = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
 			return View(driverData);
 		}
@@ -122,22 +117,20 @@ namespace TransportationManagement.Controllers
 		[HttpGet]
 		public IActionResult AssignTrip(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 			return RedirectToAction("CreateTrip", "Trip");
 		}
 
 		[HttpGet]
-		public IActionResult GetAssignedTrips(int id) // 'id' is the driverId passed from the Index
+		public async Task<IActionResult> GetAssignedTrips(int id)
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			// Fetch only trips belonging to this specific driverId
-			var trips = _tripService.GetAllTrips()
-									.Where(t => t.driverId == id)
-									.ToList();
+			// Fixed: Using the Async version
+			var allTrips = await _tripService.GetAllTripsAsync();
+			var trips = allTrips.Where(t => t.driverId == id).ToList();
 
-			// Get driver details for the page heading
-			var driverInfo = _driverService.GetDriverDetails(id);
+			var driverInfo = await _driverService.GetDriverDetailsAsync(id);
 			ViewBag.DriverName = driverInfo?.name ?? "Driver";
 			ViewBag.DriverId = id;
 
@@ -145,25 +138,25 @@ namespace TransportationManagement.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult Edit(int id)
+		public async Task<IActionResult> Edit(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var driverData = _driverService.GetDriverDetails(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			var driverData = await _driverService.GetDriverDetailsAsync(id);
 			if (driverData == null) return NotFound();
 			return View(driverData);
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult Edit(Driver driverData)
+		public async Task<IActionResult> Edit(Driver driverData)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
 			if (ModelState.IsValid)
 			{
 				try
 				{
-					_driverService.UpdateDriver(driverData);
+					await _driverService.UpdateDriverAsync(driverData);
 					TempData["Success"] = "Driver updated successfully.";
 					return RedirectToAction("Index");
 				}
@@ -176,23 +169,23 @@ namespace TransportationManagement.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult Delete(int id)
+		public async Task<IActionResult> Delete(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
-			var driverData = _driverService.GetDriverDetails(id);
+			if (!CanEdit()) return RedirectToAction("Index");
+			var driverData = await _driverService.GetDriverDetailsAsync(id);
 			if (driverData == null) return NotFound();
 			return View(driverData);
 		}
 
 		[HttpPost, ActionName("Delete")]
 		[ValidateAntiForgeryToken]
-		public IActionResult DeleteConfirmed(int id)
+		public async Task<IActionResult> DeleteConfirmed(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index"); // Security lock
+			if (!CanEdit()) return RedirectToAction("Index");
 
-			// 1. Pre-Check: Prevent deletion if actively on a route
-			bool isDriverBusy = _tripService.GetAllTrips()
-				.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
+			// Fixed: Using the Async version
+			var allTrips = await _tripService.GetAllTripsAsync();
+			bool isDriverBusy = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
 			if (isDriverBusy)
 			{
@@ -200,10 +193,9 @@ namespace TransportationManagement.Controllers
 				return RedirectToAction("Index");
 			}
 
-			// 2. Safely attempt database deletion
 			try
 			{
-				_driverService.DeleteDriver(id);
+				await _driverService.DeleteDriverAsync(id);
 				TempData["Success"] = "Driver deleted successfully.";
 			}
 			catch (Exception)

@@ -1,17 +1,22 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TransportationManagement.Interfaces;
 using TransportationManagement.Models;
+
 namespace TransportationManagement.Services
 {
-    public class FuelService
-    {
-        private readonly IFuelRepository _repo;
-        public FuelService(IFuelRepository repo) { _repo = repo; }
-        public List<FuelEntry> GetAllFuelEntries() => _repo.GetAllFuelEntries();
-        public FuelEntry? GetFuelEntryById(int id) => _repo.GetFuelEntryById(id);
-        public List<FuelEntry> GetFuelConsumption(int vehicleId) => _repo.GetFuelEntriesByVehicleId(vehicleId);
-        public List<FuelEntry> GenerateFuelReport() => _repo.GetAllFuelEntries();
-        public void AddFuelEntry(FuelEntry f) => _repo.AddFuelEntry(f);
-        public void UpdateFuelEntry(FuelEntry f) => _repo.UpdateFuelEntry(f);
-        public void DeleteFuelEntry(int id) => _repo.DeleteFuelEntry(id);
-    }
+	public class FuelService
+	{
+		private readonly IFuelRepository _repo;
+		public FuelService(IFuelRepository repo) { _repo = repo; }
+
+		public async Task<List<FuelEntry>> GetAllFuelEntriesAsync() => await _repo.GetAllFuelEntriesAsync();
+		public async Task<FuelEntry?> GetFuelEntryByIdAsync(int id) => await _repo.GetFuelEntryByIdAsync(id);
+		public async Task<List<FuelEntry>> GetFuelConsumptionAsync(int vehicleId) => await _repo.GetFuelEntriesByVehicleIdAsync(vehicleId);
+		public async Task<List<FuelEntry>> GenerateFuelReportAsync() => await _repo.GetAllFuelEntriesAsync();
+
+		public async Task AddFuelEntryAsync(FuelEntry f) => await _repo.AddFuelEntryAsync(f);
+		public async Task UpdateFuelEntryAsync(FuelEntry f) => await _repo.UpdateFuelEntryAsync(f);
+		public async Task DeleteFuelEntryAsync(int id) => await _repo.DeleteFuelEntryAsync(id);
+	}
 }

@@ -1,29 +1,43 @@
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using TransportationManagement.Data;
 using TransportationManagement.Interfaces;
 using TransportationManagement.Models;
 
 namespace TransportationManagement.Repositories
 {
-    public class FuelRepository : IFuelRepository
-    {
-        private readonly ApplicationDbContext _context;
-        public FuelRepository(ApplicationDbContext context) { _context = context; }
+	public class FuelRepository : IFuelRepository
+	{
+		private readonly ApplicationDbContext _context;
+		public FuelRepository(ApplicationDbContext context) { _context = context; }
 
-        public List<FuelEntry> GetAllFuelEntries() => _context.FuelEntries.Include(f => f.Vehicle).ToList();
+		public async Task<List<FuelEntry>> GetAllFuelEntriesAsync()
+			=> await _context.FuelEntries.Include(f => f.Vehicle).ToListAsync();
 
-        public FuelEntry? GetFuelEntryById(int fuelId) => _context.FuelEntries.Include(f => f.Vehicle).FirstOrDefault(f => f.fuelId == fuelId);
+		public async Task<FuelEntry?> GetFuelEntryByIdAsync(int fuelId)
+			=> await _context.FuelEntries.Include(f => f.Vehicle).FirstOrDefaultAsync(f => f.fuelId == fuelId);
 
-        public List<FuelEntry> GetFuelEntriesByVehicleId(int vehicleId) => _context.FuelEntries.Include(f => f.Vehicle).Where(f => f.vehicleId == vehicleId).ToList();
+		public async Task<List<FuelEntry>> GetFuelEntriesByVehicleIdAsync(int vehicleId)
+			=> await _context.FuelEntries.Include(f => f.Vehicle).Where(f => f.vehicleId == vehicleId).ToListAsync();
 
-        public void AddFuelEntry(FuelEntry f) { _context.FuelEntries.Add(f); _context.SaveChanges(); }
+		public async Task AddFuelEntryAsync(FuelEntry f)
+		{
+			await _context.FuelEntries.AddAsync(f);
+			await _context.SaveChangesAsync();
+		}
 
-        public void UpdateFuelEntry(FuelEntry f) { _context.FuelEntries.Update(f); _context.SaveChanges(); }
+		public async Task UpdateFuelEntryAsync(FuelEntry f)
+		{
+			_context.FuelEntries.Update(f);
+			await _context.SaveChangesAsync();
+		}
 
-        public void DeleteFuelEntry(int fuelId)
-        {
-            var f = _context.FuelEntries.Find(fuelId);
-            if (f != null) { _context.FuelEntries.Remove(f); _context.SaveChanges(); }
-        }
-    }
+		public async Task DeleteFuelEntryAsync(int fuelId)
+		{
+			var f = await _context.FuelEntries.FindAsync(fuelId);
+			if (f != null) { _context.FuelEntries.Remove(f); await _context.SaveChangesAsync(); }
+		}
+	}
 }

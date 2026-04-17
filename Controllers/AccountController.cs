@@ -21,7 +21,7 @@ namespace TransportationManagement.Controllers
             // If already logged in, redirect
             if (HttpContext.Session.GetString("Username") != null)
                 return RedirectToAction("Index", "Home");
-
+            TempData.Clear();
             return View();
         }
 
@@ -93,13 +93,17 @@ namespace TransportationManagement.Controllers
             return View(model);
         }
 
-        // POST: /Account/Logout
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login");
-        }
-    }
+		// POST: /Account/Logout
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public IActionResult Logout()
+		{
+			// 1. Clear the user's secure session data
+			HttpContext.Session.Clear();
+
+			TempData.Clear();
+
+			return RedirectToAction("Login");
+		}
+	}
 }
