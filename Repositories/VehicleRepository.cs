@@ -27,6 +27,7 @@ namespace TransportationManagement.Repositories
 		// Entity Framework doesn't need an 'UpdateAsync', but saving is async!
 		public async Task UpdateVehicleAsync(Vehicle vehicle)
 		{
+			_context.ChangeTracker.Clear();
 			_context.Vehicles.Update(vehicle);
 			await _context.SaveChangesAsync();
 		}

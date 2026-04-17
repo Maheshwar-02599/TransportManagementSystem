@@ -18,6 +18,8 @@
         <form asp-action="UpdateVehicle" method="post">
             <input type="hidden" asp-for="vehicleId" />
             
+            <div asp-validation-summary="All" class="text-danger fw-bold mb-3"></div>
+            
             <div class="row g-4 mb-3">
                 <div class="col-md-6">
                     <label asp-for="vehicleNumber" class="form-label fw-semibold text-secondary small text-uppercase">Vehicle Number</label>

@@ -1,13 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Http; // Needed for Session.GetInt32
 using TransportationManagement.Models;
 using TransportationManagement.Services;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace TransportationManagement.Controllers
 {
@@ -18,14 +17,14 @@ namespace TransportationManagement.Controllers
 		private readonly DriverService _driverService;
 		private readonly FuelService _fuelService;
 
-        public TripController(TripService tripService, VehicleService vehicleService,
-                              DriverService driverService, FuelService fuelService)
-        {
-            _tripService = tripService;
-            _vehicleService = vehicleService;
-            _driverService = driverService;
-            _fuelService = fuelService;
-        }
+		public TripController(TripService tripService, VehicleService vehicleService,
+							  DriverService driverService, FuelService fuelService)
+		{
+			_tripService = tripService;
+			_vehicleService = vehicleService;
+			_driverService = driverService;
+			_fuelService = fuelService;
+		}
 
 		private bool CanView()
 		{
@@ -39,36 +38,47 @@ namespace TransportationManagement.Controllers
 			return r == "FleetManager";
 		}
 
-		// Made this async to wait for the vehicle service
 		private async Task LoadDropdowns()
 		{
 			var vehicles = await _vehicleService.GetAllVehiclesAsync();
-
-			// FIXED: Now uses the async version!
 			var drivers = await _driverService.GetAllDriversAsync();
 
 			ViewBag.Vehicles = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicles, "vehicleId", "vehicleNumber");
 			ViewBag.Drivers = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(drivers, "driverId", "name");
 		}
 
+		[HttpGet]
 		public async Task<IActionResult> Index()
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
 			var allTrips = await _tripService.GetAllTripsAsync();
 			var role = HttpContext.Session.GetString("Role");
-			var currentUserEmail = HttpContext.Session.GetString("Username")?.ToLower().Trim();
 
-			if (role == "Driver" && !string.IsNullOrEmpty(currentUserEmail))
+			// --- FIXED: SECURE USER ID LOOKUP INSTEAD OF EMAIL MATCHING ---
+			if (role == "Driver")
 			{
-				var emailPrefix = currentUserEmail.Split('@')[0];
-				var driverTrips = allTrips.Where(t => t.Driver != null &&
-								  t.Driver.name.ToLower().Trim().Contains(emailPrefix))
-								  .ToList();
+				int? currentUserId = HttpContext.Session.GetInt32("UserId");
 
-               
-                return View(driverTrips);
-            }
+				if (currentUserId.HasValue)
+				{
+					// Get the EXACT driver profile tied to this login
+					var currentDriver = await _driverService.GetDriverByUserIdAsync(currentUserId.Value);
+
+					if (currentDriver != null)
+					{
+						// Filter trips exactly by DriverId
+						var driverTrips = allTrips.Where(t => t.driverId == currentDriver.driverId).ToList();
+						return View(driverTrips);
+					}
+					else
+					{
+						// Failsafe: If no profile exists yet, show empty list
+						return View(new List<Trip>());
+					}
+				}
+			}
+			// --------------------------------------------------------------
 
 			return View(allTrips);
 		}
@@ -104,7 +114,6 @@ namespace TransportationManagement.Controllers
 				decimal calculatedFuelQty = Math.Round((decimal)distanceTraveled / mileageKmPerLiter, 2);
 				decimal calculatedFuelCost = Math.Round(calculatedFuelQty * costPerLiter, 2);
 
-				// FIXED: Added await and Async() to GetFuelConsumption
 				var vehicleFuelHistory = await _fuelService.GetFuelConsumptionAsync(trip.vehicleId);
 				int lastOdometer = vehicleFuelHistory.Any() ? vehicleFuelHistory.Max(f => f.odometerReading) : 0;
 				int newOdometerReading = lastOdometer + distanceTraveled;
@@ -118,7 +127,6 @@ namespace TransportationManagement.Controllers
 					entryDate = DateTime.Now
 				};
 
-				// FIXED: Added await and Async() to AddFuelEntry
 				await _fuelService.AddFuelEntryAsync(autoFuelEntry);
 
 				TempData["Success"] = $"Trip completed! System auto-logged {calculatedFuelQty}L of fuel for {distanceTraveled}km traveled.";
@@ -150,7 +158,7 @@ namespace TransportationManagement.Controllers
 			var fleetVehicle = await _vehicleService.GetVehicleDetailsAsync(trip.vehicleId);
 			if (fleetVehicle != null && fleetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
 			{
-				ModelState.AddModelError("vehicleId", "DENIED: This vehicle is under maintenance.");
+				ModelState.AddModelError("vehicleId", "Cannot assign trip: This vehicle is currently IN_SERVICE (Under Maintenance).");
 			}
 
 			if (ModelState.IsValid)

@@ -17,19 +17,19 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white">
             <div class="text-secondary mb-2 small text-uppercase tracking-wide fw-bold">Total Entries</div>
-            <h2 class="fw-bold text-dark mb-0">@Model.Count()</h2>
+            <h2 class="fw-bold text-dark mb-0">@(Model?.Count() ?? 0)</h2>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white">
             <div class="text-secondary mb-2 small text-uppercase tracking-wide fw-bold">Total Fuel Consumed</div>
-            <h2 class="fw-bold text-info mb-0">@Model.Sum(f => f.fuelQuantity).ToString("F2") <span class="fs-5 text-muted">L</span></h2>
+            <h2 class="fw-bold text-info mb-0">@(Model?.Any() == true ? Model.Sum(f => f.fuelQuantity).ToString("F2") : "0.00") <span class="fs-5 text-muted">L</span></h2>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white">
             <div class="text-secondary mb-2 small text-uppercase tracking-wide fw-bold">Total Expenditure</div>
-            <h2 class="fw-bold text-success mb-0"><span class="fs-5 text-muted">Rs.</span> @Model.Sum(f => f.fuelCost).ToString("F2")</h2>
+            <h2 class="fw-bold text-success mb-0"><span class="fs-5 text-muted">Rs.</span> @(Model?.Any() == true ? Model.Sum(f => f.fuelCost).ToString("F2") : "0.00")</h2>
         </div>
     </div>
 </div>
@@ -48,25 +48,26 @@
                 </tr>
             </thead>
             <tbody class="border-top-0">
-                @{
-                    int i = 1;
-                }
-                @foreach (var f in Model)
+                @if (Model != null && Model.Any())
                 {
-                    <tr>
-                        <td class="ps-4 py-3 text-muted">@i++</td>
-                        <td class="py-3 fw-semibold">@(f.Vehicle?.vehicleNumber ?? "-")</td>
-                        <td class="py-3">@f.fuelQuantity</td>
-                        <td class="py-3 text-success fw-semibold">Rs. @f.fuelCost</td>
-                        <td class="py-3">@f.odometerReading km</td>
-                        <td class="py-3">@f.entryDate.ToString("dd-MMM-yyyy")</td>
-                    </tr>
+                    int i = 1;
+                    foreach (var f in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 py-3 text-muted">@(i++)</td>
+                            <td class="py-3 fw-semibold">@(f.Vehicle?.vehicleNumber ?? "-")</td>
+                            <td class="py-3">@f.fuelQuantity</td>
+                            <td class="py-3 text-success fw-semibold">Rs. @f.fuelCost</td>
+                            <td class="py-3">@f.odometerReading km</td>
+                            <td class="py-3">@f.entryDate.ToString("dd-MMM-yyyy")</td>
+                        </tr>
+                    }
                 }
-                @if (!Model.Any())
+                else
                 {
                     <tr><td colspan="6" class="text-center text-muted py-5">No report data found.</td></tr>
                 }
             </tbody>
         </table>
     </div>
-</div>
+</div>  

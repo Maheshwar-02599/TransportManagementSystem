@@ -42,12 +42,6 @@
             <div class="col-md-9 text-muted">@(string.IsNullOrWhiteSpace(Model.remarks) ? "No remarks provided." : Model.remarks)</div>
         </div>
 
-        @if (Context.Session.GetString("Role") == "FleetManager" || Context.Session.GetString("Role") == "MaintenanceEngineer")
-        {
-            <div class="mt-4 pt-4 border-top">
-                <a asp-action="UpdateServiceRecord" asp-route-id="@Model.maintenanceId" class="btn btn-warning rounded-pill px-4 shadow-sm me-2"><i class="fas fa-edit me-2"></i>Edit Record</a>
-                <a asp-action="Delete" asp-route-id="@Model.maintenanceId" class="btn btn-outline-danger rounded-pill px-4"><i class="fas fa-trash me-2"></i>Delete</a>
-            </div>
-        }
+        
     </div>
 </div>

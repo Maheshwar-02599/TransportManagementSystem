@@ -7,9 +7,9 @@ namespace TransportationManagement.Models
         [Key]
         public int vehicleId { get; set; }
 
-        [Required]
-        [StringLength(50)]
-        public string vehicleNumber { get; set; } = string.Empty;
+		[Required(ErrorMessage = "Vehicle Number is required")]
+		[RegularExpression(@"^[A-Z0-9]{10}$", ErrorMessage = "Vehicle number must be exactly 10 characters and use ONLY capital letters and numbers (e.g., TN01AB1234).")]
+		public string vehicleNumber { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100)]

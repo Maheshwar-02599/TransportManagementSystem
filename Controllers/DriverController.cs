@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 using TransportationManagement.ViewModels;
-using System;
 
 namespace TransportationManagement.Controllers
 {
@@ -16,12 +15,12 @@ namespace TransportationManagement.Controllers
 		private readonly TripService _tripService;
 		private readonly AccountService _accountService;
 
-		public DriverController(DriverService driverService, AccountService accountService,TripService tripService)
-        {
-            _driverService = driverService;
+		public DriverController(DriverService driverService, AccountService accountService, TripService tripService)
+		{
+			_driverService = driverService;
 			_tripService = tripService;
-            _accountService = accountService;
-        }
+			_accountService = accountService;
+		}
 
 		private bool CanView()
 		{
@@ -39,7 +38,6 @@ namespace TransportationManagement.Controllers
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			// Fixed: Using the Async version
 			var allTrips = await _tripService.GetAllTripsAsync();
 			var activeRoutes = allTrips.Where(t => t.tripStatus != TripStatus.COMPLETED).ToList();
 
@@ -62,36 +60,48 @@ namespace TransportationManagement.Controllers
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
 
-			
-				
-			
-
-			
 			if (await _accountService.IsUsernameTaken(model.Username))
 			{
 				ModelState.AddModelError("Username", "This email is already registered.");
-				return View(model);
+			}
+
+			var allDrivers = await _driverService.GetAllDriversAsync();
+
+			if (allDrivers.Any(d => d.licenseNumber.Trim().ToLower() == model.Driver.licenseNumber.Trim().ToLower()))
+			{
+				ModelState.AddModelError("Driver.licenseNumber", "This License Number is already registered to another driver.");
+			}
+
+			if (allDrivers.Any(d => d.contactNumber.Trim() == model.Driver.contactNumber.Trim()))
+			{
+				ModelState.AddModelError("Driver.contactNumber", "This Mobile Number is already in use.");
 			}
 
 			if (ModelState.IsValid)
 			{
-				await _driverService.AddDriverAsync(model.Driver);
+				// 1. Create the User Account FIRST
 				var userAccount = new RegisterViewModel
 				{
 					Username = model.Username,
-					Password=model.Password,
-					ConfirmPassword=model.ConfirmPassword,
+					Password = model.Password,
+					ConfirmPassword = model.ConfirmPassword,
 					Role = "Driver"
 				};
-				await _accountService.CreateAccount(userAccount);
-				
 
-				TempData["Success"] = "Driver created successfully.";
+				// 2. Grab the new generated UserId
+				int newUserId = await _accountService.CreateAccount(userAccount);
+
+				// 3. Link the Driver to the new User Account
+				model.Driver.UserId = newUserId;
+
+				// 4. NOW save the Driver to the database
+				await _driverService.AddDriverAsync(model.Driver);
+
+				TempData["Success"] = "Driver and login created successfully.";
 				return RedirectToAction("Index");
 			}
-			
-				return View(model);
-			
+
+			return View(model);
 		}
 
 		[HttpGet]
@@ -102,7 +112,6 @@ namespace TransportationManagement.Controllers
 			var driverData = await _driverService.GetDriverDetailsAsync(id);
 			if (driverData == null) return NotFound();
 
-			// Fixed: Using the Async version
 			var allTrips = await _tripService.GetAllTripsAsync();
 			ViewBag.IsCurrentlyDeployed = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
@@ -121,7 +130,6 @@ namespace TransportationManagement.Controllers
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
 
-			// Fixed: Using the Async version
 			var allTrips = await _tripService.GetAllTripsAsync();
 			var trips = allTrips.Where(t => t.driverId == id).ToList();
 
@@ -146,6 +154,18 @@ namespace TransportationManagement.Controllers
 		public async Task<IActionResult> Edit(Driver driverData)
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
+
+			var allDrivers = await _driverService.GetAllDriversAsync();
+
+			if (allDrivers.Any(d => d.licenseNumber.Trim().ToLower() == driverData.licenseNumber.Trim().ToLower() && d.driverId != driverData.driverId))
+			{
+				ModelState.AddModelError("licenseNumber", "This License Number is already registered to another driver.");
+			}
+
+			if (allDrivers.Any(d => d.contactNumber.Trim() == driverData.contactNumber.Trim() && d.driverId != driverData.driverId))
+			{
+				ModelState.AddModelError("contactNumber", "This Mobile Number is already in use.");
+			}
 
 			if (ModelState.IsValid)
 			{
@@ -178,21 +198,35 @@ namespace TransportationManagement.Controllers
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
 
-			// Fixed: Using the Async version
 			var allTrips = await _tripService.GetAllTripsAsync();
 			bool isDriverBusy = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
-            // BUSINESS RULE: Cannot delete if Driver is currently on a trip
-            if (isDriverBusy)
-            {
-                TempData["Error"] = $"Constraint Failed: Cannot delete this driver because he is currently ON_TRIP.";
-                return RedirectToAction("Index");
-            }
+			if (isDriverBusy)
+			{
+				TempData["Error"] = $"Constraint Failed: Cannot delete this driver because he is currently ON_TRIP.";
+				return RedirectToAction("Index");
+			}
 
 			try
 			{
-				await _driverService.DeleteDriverAsync(id);
-				TempData["Success"] = "Driver deleted successfully.";
+				// 1. Fetch the driver to safely grab the UserId before we delete them
+				var driverToDelete = await _driverService.GetDriverDetailsAsync(id);
+
+				if (driverToDelete != null)
+				{
+					int? userIdToRemove = driverToDelete.UserId;
+
+					// 2. Delete the Driver record
+					await _driverService.DeleteDriverAsync(id);
+
+					// 3. Delete the Admin User Account using your new AccountService!
+					if (userIdToRemove.HasValue)
+					{
+						_accountService.RemoveUser(userIdToRemove.Value);
+					}
+
+					TempData["Success"] = "Driver profile and login account deleted successfully.";
+				}
 			}
 			catch (Exception)
 			{

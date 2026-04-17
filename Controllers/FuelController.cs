@@ -1,21 +1,22 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 
 namespace TransportationManagement.Controllers
 {
-    public class FuelController : Controller
-    {
-        private readonly FuelService _fuelService;
-        private readonly VehicleService _vehicleService;
+	public class FuelController : Controller
+	{
+		private readonly FuelService _fuelService;
+		private readonly VehicleService _vehicleService;
 
-        public FuelController(FuelService fuelService, VehicleService vehicleService)
-        {
-            _fuelService = fuelService;
-            _vehicleService = vehicleService;
-        }
+		public FuelController(FuelService fuelService, VehicleService vehicleService)
+		{
+			_fuelService = fuelService;
+			_vehicleService = vehicleService;
+		}
 
 		private bool CanView()
 		{
@@ -29,11 +30,10 @@ namespace TransportationManagement.Controllers
 			return r == "FleetManager";
 		}
 
-		// Made async to await the VehicleService
 		private async Task LoadVehicles()
 		{
 			var vehicles = await _vehicleService.GetAllVehiclesAsync();
-			ViewBag.Vehicles = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicles, "vehicleId", "vehicleNumber");
+			ViewBag.Vehicles = new SelectList(vehicles, "vehicleId", "vehicleNumber");
 		}
 
 		public async Task<IActionResult> Index()
@@ -74,9 +74,11 @@ namespace TransportationManagement.Controllers
 			return View(entries);
 		}
 
+		[HttpGet]
 		public async Task<IActionResult> GenerateFuelReport()
 		{
 			if (!CanView()) return RedirectToAction("Login", "Account");
+
 			var report = await _fuelService.GenerateFuelReportAsync();
 			return View(report);
 		}
@@ -134,7 +136,5 @@ namespace TransportationManagement.Controllers
 			if (entry == null) return NotFound();
 			return View(entry);
 		}
-
-        
-    }
+	}
 }

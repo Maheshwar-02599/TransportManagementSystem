@@ -16,19 +16,19 @@ namespace TransportationManagement.Services
         public async Task<User?> GetUserById(int id) =>await  _repo.GetUserById(id);
         public async Task<bool> IsUsernameTaken(string username) => await _repo.CheckIfUserExists(username);
 
-        public async Task CreateAccount(RegisterViewModel model)
-        {
-            var user = new User
-            {
-                Username = model.Username,
-                Password = PasswordHelper.HashPassword(model.Password),
-                Role = model.Role
-            };
-            await _repo.RegisterUser(user);
-        }
+		public async Task<int> CreateAccount(RegisterViewModel model)
+		{
+			var user = new User
+			{
+				Username = model.Username,
+				Password = PasswordHelper.HashPassword(model.Password),
+				Role = model.Role
+			};
+			return await _repo.RegisterUser(user);
+		}
 
 
-        public async Task UpdateUser(User user) => await _repo.UpdateUser(user);
+		public async Task UpdateUser(User user) => await _repo.UpdateUser(user);
         public void RemoveUser(int id) => _repo.DeleteUser(id);
 
         public User? Authenticate(string username, string password)

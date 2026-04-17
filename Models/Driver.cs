@@ -12,14 +12,14 @@ namespace TransportationManagement.Models
         [StringLength(100)]
         public string name { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(50)]
-        public string licenseNumber { get; set; } = string.Empty;
+		[Required(ErrorMessage = "License Number is required.")]
+		[StringLength(16, MinimumLength = 16, ErrorMessage = "License number must be exactly 16 characters.")]
+		public string licenseNumber { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(20)]
+		[Required(ErrorMessage = "Mobile Number is required.")]
+		[RegularExpression(@"^\d{10}$", ErrorMessage = "Mobile number must be exactly 10 digits.")]
 
-        public string contactNumber { get; set; } = string.Empty;
+		public string contactNumber { get; set; } = string.Empty;
 
         public DriverStatus status { get; set; } 
 
@@ -29,8 +29,10 @@ namespace TransportationManagement.Models
         [ForeignKey("UserId")]
         public User? User { get; set; }
 
+		
 
-        public ICollection<Trip> Trips { get; set; } = new List<Trip>();
+
+		public ICollection<Trip> Trips { get; set; } = new List<Trip>();
     }
 	public enum DriverStatus { AVAILABLE, ON_TRIP, INACTIVE }
 }

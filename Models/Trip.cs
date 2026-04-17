@@ -15,13 +15,14 @@ namespace TransportationManagement.Models
         [Required]
         public int driverId { get; set; }
 
-        [Required]
-        [StringLength(100)]
-        public string origin { get; set; } = string.Empty;
+		[Required(ErrorMessage = "Origin is required")]
+		[RegularExpression(@".*[a-zA-Z]+.*", ErrorMessage = "Origin must contain at least one letter. Numbers alone are not valid.")]
+		public string origin { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(100)]
-        public string destination { get; set; } = string.Empty;
+        
+        [Required(ErrorMessage = "Destination is required")]
+        [RegularExpression(@".*[a-zA-Z]+.*", ErrorMessage = "Destination must contain at least one letter. Numbers alone are not valid.")]
+		public string destination { get; set; } = string.Empty;
 
         public string? plannedRoute { get; set; }
         
@@ -32,6 +33,8 @@ namespace TransportationManagement.Models
 
         [ForeignKey("driverId")]
         public Driver? Driver { get; set; }
+
+		
 	}
 	public enum TripStatus { PLANNED, IN_PROGRESS, COMPLETED }
 }

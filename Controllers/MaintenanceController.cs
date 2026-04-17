@@ -1,21 +1,25 @@
 using System.Threading.Tasks;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Http;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 
 namespace TransportationManagement.Controllers
 {
-    public class MaintenanceController : Controller
-    {
-        private readonly MaintenanceService _maintenanceService;
-        private readonly VehicleService _vehicleService;
+	public class MaintenanceController : Controller
+	{
+		private readonly MaintenanceService _maintenanceService;
+		private readonly VehicleService _vehicleService;
+		private readonly TripService _tripService; // Added TripService
 
-        public MaintenanceController(MaintenanceService maintenanceService, VehicleService vehicleService)
-        {
-            _maintenanceService = maintenanceService;
-            _vehicleService = vehicleService;
-        }
+		public MaintenanceController(MaintenanceService maintenanceService, VehicleService vehicleService, TripService tripService)
+		{
+			_maintenanceService = maintenanceService;
+			_vehicleService = vehicleService;
+			_tripService = tripService; // Injected TripService
+		}
 
 		private bool CanView()
 		{
@@ -26,7 +30,7 @@ namespace TransportationManagement.Controllers
 		private bool CanEdit()
 		{
 			var r = HttpContext.Session.GetString("Role");
-			return r == "FleetManager" ||r =="MaintenanceEngineer";
+			return r == "FleetManager" || r == "MaintenanceEngineer";
 		}
 
 		private async Task LoadVehicles()
@@ -56,11 +60,20 @@ namespace TransportationManagement.Controllers
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
 
+			// --- NEW VEHICLE CONTENTION CHECK ---
+			var allTrips = await _tripService.GetAllTripsAsync();
+			bool isVehicleAssigned = allTrips.Any(t => t.vehicleId == record.vehicleId && t.tripStatus != TripStatus.COMPLETED);
+
+			if (isVehicleAssigned)
+			{
+				ModelState.AddModelError("vehicleId", "Cannot schedule maintenance: This vehicle is already assigned to a Planned or Active trip.");
+			}
+			// ------------------------------------
+
 			if (ModelState.IsValid)
 			{
 				await _maintenanceService.ScheduleMaintenanceAsync(record);
 
-				// Now using async Vehicle service
 				var fleetVehicle = await _vehicleService.GetVehicleDetailsAsync(record.vehicleId);
 				if (fleetVehicle != null)
 				{
@@ -71,6 +84,7 @@ namespace TransportationManagement.Controllers
 				TempData["Success"] = "Maintenance scheduled and vehicle successfully marked as IN_SERVICE.";
 				return RedirectToAction("Index");
 			}
+
 			await LoadVehicles();
 			return View(record);
 		}

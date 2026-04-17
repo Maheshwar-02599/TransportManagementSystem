@@ -30,6 +30,7 @@ namespace TransportationManagement.Repositories
 
 		public async Task UpdateDriverAsync(Driver driver)
 		{
+			_context.ChangeTracker.Clear();
 			_context.Drivers.Update(driver);
 			await _context.SaveChangesAsync();
 		}

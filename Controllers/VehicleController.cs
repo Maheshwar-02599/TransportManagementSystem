@@ -59,7 +59,11 @@ namespace TransportationManagement.Controllers
 		public async Task<IActionResult> AddVehicle(Vehicle vehicleData)
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
-
+			var allVehicles = await _vehicleSvc.GetAllVehiclesAsync();
+			if (allVehicles.Any(v => v.vehicleNumber.Trim().ToLower() == vehicleData.vehicleNumber.Trim().ToLower()))
+			{
+				ModelState.AddModelError("vehicleNumber", "The vehicle number already exists.");
+			}
 			if (ModelState.IsValid)
 			{
 				await _vehicleSvc.AddVehicleAsync(vehicleData);
@@ -99,7 +103,12 @@ namespace TransportationManagement.Controllers
 		public async Task<IActionResult> UpdateVehicle(Vehicle vehicleData)
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
-
+			// NEW: Check for duplicate Vehicle Number on Update
+			var allVehicles = await _vehicleSvc.GetAllVehiclesAsync();
+			if (allVehicles.Any(v => v.vehicleNumber.Trim().ToLower() == vehicleData.vehicleNumber.Trim().ToLower() && v.vehicleId != vehicleData.vehicleId))
+			{
+				ModelState.AddModelError("vehicleNumber", "The vehicle number already exists.");
+			}
 			if (ModelState.IsValid)
 			{
 				try

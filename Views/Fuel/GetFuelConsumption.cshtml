@@ -26,22 +26,23 @@
                 </tr>
             </thead>
             <tbody class="border-top-0">
-                @{
-                    int i = 1;
-                }
-                @foreach (var f in Model)
+                @if (Model != null && Model.Any())
                 {
-                    <tr>
-                        <td class="ps-4 py-3 text-muted">@i++</td>
-                        <td class="py-3 fw-semibold text-dark">@f.fuelQuantity L</td>
-                        <td class="py-3 font-monospace text-success fw-semibold">Rs. @f.fuelCost</td>
-                        <td class="py-3">@f.odometerReading km</td>
-                        <td class="py-3">
-                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">@f.entryDate.ToString("dd MMM yyyy")</span>
-                        </td>
-                    </tr>
+                    int i = 1;
+                    foreach (var f in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 py-3 text-muted">@(i++)</td>
+                            <td class="py-3 fw-semibold text-dark">@f.fuelQuantity L</td>
+                            <td class="py-3 font-monospace text-success fw-semibold">Rs. @f.fuelCost</td>
+                            <td class="py-3">@f.odometerReading km</td>
+                            <td class="py-3">
+                                <span class="badge bg-light text-dark border px-2 py-1 fs-6">@f.entryDate.ToString("dd MMM yyyy")</span>
+                            </td>
+                        </tr>
+                    }
                 }
-                @if (!Model.Any())
+                else
                 {
                     <tr><td colspan="5" class="text-center text-muted py-5">No fuel consumption data found for this vehicle.</td></tr>
                 }

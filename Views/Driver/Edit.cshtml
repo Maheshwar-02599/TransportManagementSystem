@@ -17,15 +17,20 @@
     <div class="card-body p-5">
         <form asp-action="Edit" method="post">
             <input type="hidden" asp-for="driverId" />
+            <input type="hidden" asp-for="UserId" />
+            
+            <div asp-validation-summary="All" class="text-danger fw-bold mb-3"></div>
             
             <div class="row g-4 mb-3">
                 <div class="col-md-6">
                     <label asp-for="name" class="form-label fw-semibold text-secondary small text-uppercase">Full Name</label>
                     <input asp-for="name" class="form-control bg-light border-0 rounded-3 py-2" />
+                    <span asp-validation-for="name" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="licenseNumber" class="form-label fw-semibold text-secondary small text-uppercase">License Number</label>
                     <input asp-for="licenseNumber" class="form-control bg-light border-0 rounded-3 py-2" />
+                    <span asp-validation-for="licenseNumber" class="text-danger small"></span>
                 </div>
             </div>
             
@@ -33,6 +38,7 @@
                 <div class="col-md-6">
                     <label asp-for="contactNumber" class="form-label fw-semibold text-secondary small text-uppercase">Contact Number</label>
                     <input asp-for="contactNumber" class="form-control bg-light border-0 rounded-3 py-2" />
+                    <span asp-validation-for="contactNumber" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="status" class="form-label fw-semibold text-secondary small text-uppercase">Status</label>
