@@ -1,57 +1,77 @@
-@model IEnumerable<TransportationManagement.Models.User>
+@model IEnumerable<User>
 @{
     ViewData["Title"] = "Manage Users";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex align-items-center">
-        <div class="bg-dark bg-opacity-10 text-dark rounded-3 p-2 me-3 shadow-sm">
-            <i class="fas fa-users fa-lg px-1"></i>
+<div class="container-fluid py-4">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0 mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-lg me-3"></i>
+                <div>
+                    <strong>Updated!</strong> @TempData["Success"]
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <h3 class="mb-0 fw-bold">System Users</h3>
-    </div>
-    <a asp-action="CreateUser" class="btn btn-dark rounded-pill shadow-sm px-4"><i class="fas fa-user-plus me-2"></i>Add User</a>
-</div>
+    }
 
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light text-secondary small text-uppercase tracking-wide">
-                <tr>
-                    <th class="ps-4 py-3 border-0">#</th>
-                    <th class="py-3 border-0">Email (Username)</th>
-                    @* <th class="py-3 border-0">Password (Hashed)</th> *@
-                    <th class="py-3 border-0">Role</th>
-                    <th class="text-end pe-4 py-3 border-0">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="border-top-0">
-                @{
-                    int i = 1;
-                }
-                @foreach (var u in Model)
-                {
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="bg-dark bg-opacity-10 text-dark rounded-3 p-2 me-3 shadow-sm">
+                <i class="fas fa-users fa-lg px-1"></i>
+            </div>
+            <h3 class="mb-0 fw-bold">System Users</h3>
+        </div>
+        <a asp-action="CreateUser" class="btn btn-dark rounded-pill shadow-sm px-4">
+            <i class="fas fa-user-plus me-2"></i>Add User
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary small text-uppercase tracking-wide">
                     <tr>
-                        <td class="ps-4 py-3 text-muted">@i++</td>
-                        <td class="py-3 fw-semibold">@u.Username</td>
-                        @* <td class="py-3"><span class="badge bg-light text-muted border font-monospace">@u.Password.Substring(0, 15)...</span></td> *@
-                        <td class="py-3">
-                            <span class="badge rounded-pill @(u.Role == "Admin" ? "bg-primary" : u.Role == "FleetManager" ? "bg-danger" : u.Role == "Driver" ? "bg-info" :"bg-success")">@u.Role</span>
-                        </td>
-                        <td class="text-end pe-4 py-3">
-                            <a asp-action="EditUser" asp-route-id="@u.Id" class="btn btn-light btn-sm text-warning rounded-circle me-1 shadow-sm" title="Edit"><i class="fas fa-edit"></i></a>
-                            <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this user?')">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete"><i class="fas fa-trash"></i></button>
-                            </form>
-                        </td>
+                        <th class="ps-4 py-3 border-0">#</th>
+                        <th class="py-3 border-0">Email (Username)</th>
+                        <th class="py-3 border-0">Role</th>
+                        <th class="text-end pe-4 py-3 border-0">Actions</th>
                     </tr>
-                }
-                @if (!Model.Any())
-                {
-                    <tr><td colspan="5" class="text-center text-muted py-5">No users found.</td></tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="border-top-0">
+                    @{ int i = 1; }
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 py-3 text-muted">@i++</td>
+                            <td class="py-3 fw-semibold">@u.Username</td>
+                            <td class="py-3">
+                                <span class="badge rounded-pill @(u.Role == "Admin" ? "bg-primary" : u.Role == "FleetManager" ? "bg-danger" : "bg-info")">
+                                    @u.Role
+                                </span>
+                            </td>
+                            <td class="text-end pe-4 py-3">
+                                @* DO NOT show edit button for Admin accounts to prevent lockout *@
+                                @if (u.Role != "Admin")
+                                {
+                                    <a asp-action="EditUser" asp-route-id="@u.Id" class="btn btn-light btn-sm text-warning rounded-circle me-1 shadow-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                }
+                                
+                                <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this user?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>

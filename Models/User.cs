@@ -1,22 +1,12 @@
-using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TransportationManagement.Models
+public class User
 {
-    public class User
-    {
-        [Key]
-        public int Id { get; set; }
+	public int Id { get; set; }
+	public string Username { get; set; }
+	public string Password { get; set; } // Hashed in DB
+	public string Role { get; set; }
 
-        [Required]
-        [StringLength(100)]
-        public string Username { get; set; } = string.Empty;   // will store email
-
-        [Required]
-        [StringLength(255)]
-        public string Password { get; set; } = string.Empty;   // hashed password
-
-        [Required]
-        [StringLength(50)]
-        public string Role { get; set; } = string.Empty;       // Admin, FleetManager, Driver, MaintenanceEngineer
-    }
+	[NotMapped]
+	public string? NewPassword { get; set; }
 }
