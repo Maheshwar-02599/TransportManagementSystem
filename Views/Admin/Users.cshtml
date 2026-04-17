@@ -38,6 +38,7 @@
                         <td class="py-3">
                             <span class="badge rounded-pill @(u.Role == "Admin" ? "bg-primary" : u.Role == "FleetManager" ? "bg-danger" : u.Role == "Driver" ? "bg-info" :"bg-success")">@u.Role</span>
                         </td>
+                        @if(u.Role != "Admin"){
                         <td class="text-end pe-4 py-3">
                             <a asp-action="EditUser" asp-route-id="@u.Id" class="btn btn-light btn-sm text-warning rounded-circle me-1 shadow-sm" title="Edit"><i class="fas fa-edit"></i></a>
                             <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this user?')">
@@ -45,6 +46,7 @@
                                 <button type="submit" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete"><i class="fas fa-trash"></i></button>
                             </form>
                         </td>
+                        }
                     </tr>
                 }
                 @if (!Model.Any())
