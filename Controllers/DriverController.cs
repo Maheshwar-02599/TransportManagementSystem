@@ -3,6 +3,7 @@ using TransportationManagement.Models;
 using TransportationManagement.Services;
 using TransportationManagement.ViewModels;
 using System;
+using Microsoft.AspNetCore.Http;
 
 namespace TransportationManagement.Controllers
 {
@@ -17,6 +18,7 @@ namespace TransportationManagement.Controllers
             _accountService = accountService;
         }
 
+        // Helper methods for Session-based Role validation
         private bool CanView() => HttpContext.Session.GetString("Role") == "Admin" || HttpContext.Session.GetString("Role") == "FleetManager";
         private bool CanEdit() => HttpContext.Session.GetString("Role") == "FleetManager";
 
@@ -38,6 +40,7 @@ namespace TransportationManagement.Controllers
         public IActionResult AddDriver(CreateDriverViewModel model)
         {
             if (!CanEdit()) return RedirectToAction("Index");
+
             if (_accountService.IsUsernameTaken(model.Username))
             {
                 ModelState.AddModelError("Username", "This email is already registered.");
@@ -60,20 +63,30 @@ namespace TransportationManagement.Controllers
             return View(model);
         }
 
+        // --- UPDATED: This now matches asp-action="Edit" in your Index.cshtml ---
         [HttpGet]
-        public IActionResult UpdateDriver(int id)
+        public IActionResult Edit(int id)
         {
-            if (!CanEdit()) return RedirectToAction("Index");
+            if (!CanEdit())
+            {
+                TempData["Error"] = "Permission Denied: You must be a Fleet Manager to edit drivers.";
+                return RedirectToAction("Index");
+            }
+
             var driver = _driverService.GetDriverDetails(id);
             if (driver == null) return NotFound();
+
+            // If your view file is named 'UpdateDriver.cshtml', use: return View("UpdateDriver", driver);
+            // If it's named 'Edit.cshtml', use: return View(driver);
             return View(driver);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult UpdateDriver(Driver driver)
+        public IActionResult Edit(Driver driver)
         {
             if (!CanEdit()) return RedirectToAction("Index");
+
             if (ModelState.IsValid)
             {
                 _driverService.UpdateDriver(driver);
@@ -83,13 +96,21 @@ namespace TransportationManagement.Controllers
             return View(driver);
         }
 
-        // --- ADDED THIS GET METHOD TO CAPTURE THE LINK CLICK ---
+        // Optional: Keep UpdateDriver as an alias so existing links don't break
+        [HttpGet] public IActionResult UpdateDriver(int id) => RedirectToAction("Edit", new { id });
+
+        [HttpGet]
+        public IActionResult GetDriverDetails(int id)
+        {
+            var driver = _driverService.GetDriverDetails(id);
+            if (driver == null) return NotFound();
+            return View(driver);
+        }
+
         [HttpGet]
         public IActionResult Delete(int id)
         {
             if (!CanEdit()) return RedirectToAction("Index");
-
-            // This captures the GET request from your <a> tag and redirects to the logic below
             return DeleteConfirmed(id);
         }
 
@@ -102,7 +123,6 @@ namespace TransportationManagement.Controllers
             var driver = _driverService.GetDriverDetails(id);
             if (driver == null) return NotFound();
 
-            // BUSINESS RULE: Cannot delete if Driver is currently on a trip
             if (driver.status == DriverStatus.ON_TRIP)
             {
                 TempData["Error"] = $"Constraint Failed: Cannot delete {driver.name} while they are ON_TRIP.";
