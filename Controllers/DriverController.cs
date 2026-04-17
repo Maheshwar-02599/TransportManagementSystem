@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
-using TransportationManagement.Data;
 using TransportationManagement.ViewModels;
+using System;
 
 namespace TransportationManagement.Controllers
 {
@@ -14,14 +14,14 @@ namespace TransportationManagement.Controllers
 	{
 		private readonly DriverService _driverService;
 		private readonly TripService _tripService;
-		private readonly ApplicationDbContext _context;
+		private readonly AccountService _accountService;
 
-		public DriverController(DriverService driverService, TripService tripService, ApplicationDbContext context)
-		{
-			_driverService = driverService;
+		public DriverController(DriverService driverService, AccountService accountService,TripService tripService)
+        {
+            _driverService = driverService;
 			_tripService = tripService;
-			_context = context;
-		}
+            _accountService = accountService;
+        }
 
 		private bool CanView()
 		{
@@ -187,11 +187,12 @@ namespace TransportationManagement.Controllers
 			var allTrips = await _tripService.GetAllTripsAsync();
 			bool isDriverBusy = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
-			if (isDriverBusy)
-			{
-				TempData["Error"] = "Constraint Failed: Cannot delete this driver because they are currently ON_TRIP.";
-				return RedirectToAction("Index");
-			}
+            // BUSINESS RULE: Cannot delete if Driver is currently on a trip
+            if (driver.status == DriverStatus.ON_TRIP)
+            {
+                TempData["Error"] = $"Constraint Failed: Cannot delete {driver.name} while they are ON_TRIP.";
+                return RedirectToAction("Index");
+            }
 
 			try
 			{

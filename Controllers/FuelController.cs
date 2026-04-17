@@ -1,20 +1,21 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 
 namespace TransportationManagement.Controllers
 {
-	public class FuelController : Controller
-	{
-		private readonly FuelService _fuelService;
-		private readonly VehicleService _vehicleService;
+    public class FuelController : Controller
+    {
+        private readonly FuelService _fuelService;
+        private readonly VehicleService _vehicleService;
 
-		public FuelController(FuelService fuelService, VehicleService vehicleService)
-		{
-			_fuelService = fuelService;
-			_vehicleService = vehicleService;
-		}
+        public FuelController(FuelService fuelService, VehicleService vehicleService)
+        {
+            _fuelService = fuelService;
+            _vehicleService = vehicleService;
+        }
 
 		private bool CanView()
 		{
@@ -132,7 +133,12 @@ namespace TransportationManagement.Controllers
 			var entry = await _fuelService.GetFuelEntryByIdAsync(id);
 			if (entry == null) return NotFound();
 
-			return View(entry);
-		}
-	}
+        public IActionResult GetFuelConsumption(int vehicleId)
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
+            var entries = _fuelService.GetFuelConsumption(vehicleId);
+            ViewBag.VehicleId = vehicleId;
+            return View(entries);
+        }
+    }
 }

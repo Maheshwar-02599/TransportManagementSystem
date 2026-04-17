@@ -9,10 +9,10 @@ using TransportationManagement.Models;
 
 namespace TransportationManagement.Repositories
 {
-	public class TripRepository : ITripRepository
-	{
-		private readonly ApplicationDbContext _context;
-		public TripRepository(ApplicationDbContext context) { _context = context; }
+    public class TripRepository : ITripRepository
+    {
+        private readonly ApplicationDbContext _context;
+        public TripRepository(ApplicationDbContext context) { _context = context; }
 
 		public async Task<List<Trip>> GetAllTripsAsync()
 			=> await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).ToListAsync();

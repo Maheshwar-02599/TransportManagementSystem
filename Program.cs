@@ -19,26 +19,30 @@ builder.Services.AddSession(options =>
 });
 builder.Services.AddHttpContextAccessor();
 
-// Repositories
+// --- REPOSITORIES ---
 builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
 builder.Services.AddScoped<IDriverRepository, DriverRepository>();
 builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
 builder.Services.AddScoped<IFuelRepository, FuelRepository>();
+// Add this line:
+builder.Services.AddScoped<AccountRepository>();
 
-// Services
+// --- SERVICES ---
 builder.Services.AddScoped<VehicleService>();
 builder.Services.AddScoped<DriverService>();
 builder.Services.AddScoped<TripService>();
 builder.Services.AddScoped<MaintenanceService>();
 builder.Services.AddScoped<FuelService>();
+// Add this line:
+builder.Services.AddScoped<AccountService>();
 
 // MVC
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Apply migrations and seed admin user automatically
+// Apply migrations automatically
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -53,8 +57,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
-app.UseSession();    // must be before MapControllerRoute
+
+app.UseSession(); // Important: Keep this before MapControllerRoute
 
 app.MapControllerRoute(
     name: "default",

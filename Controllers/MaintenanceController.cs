@@ -6,16 +6,16 @@ using TransportationManagement.Services;
 
 namespace TransportationManagement.Controllers
 {
-	public class MaintenanceController : Controller
-	{
-		private readonly MaintenanceService _maintenanceService;
-		private readonly VehicleService _vehicleService;
+    public class MaintenanceController : Controller
+    {
+        private readonly MaintenanceService _maintenanceService;
+        private readonly VehicleService _vehicleService;
 
-		public MaintenanceController(MaintenanceService maintenanceService, VehicleService vehicleService)
-		{
-			_maintenanceService = maintenanceService;
-			_vehicleService = vehicleService;
-		}
+        public MaintenanceController(MaintenanceService maintenanceService, VehicleService vehicleService)
+        {
+            _maintenanceService = maintenanceService;
+            _vehicleService = vehicleService;
+        }
 
 		private bool CanView()
 		{
@@ -26,7 +26,7 @@ namespace TransportationManagement.Controllers
 		private bool CanEdit()
 		{
 			var r = HttpContext.Session.GetString("Role");
-			return r == "FleetManager" || r == "MaintenanceEngineer";
+			return r =="MaintenanceEngineer";
 		}
 
 		private async Task LoadVehicles()

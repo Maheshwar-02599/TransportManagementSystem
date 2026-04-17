@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
+using System;
+using System.Linq;
 
 namespace TransportationManagement.Controllers
 {
@@ -9,11 +11,11 @@ namespace TransportationManagement.Controllers
 		private readonly VehicleService _vehicleSvc;
 		private readonly TripService _routeSvc;
 
-		public VehicleController(VehicleService vehicleService, TripService tripService)
-		{
-			_vehicleSvc = vehicleService;
-			_routeSvc = tripService;
-		}
+        public VehicleController(VehicleService vehicleService, TripService tripService)
+        {
+            _vehicleSvc = vehicleService;
+            _routeSvc = tripService;
+        }
 
 		private bool CanView()
 		{
@@ -150,7 +152,14 @@ namespace TransportationManagement.Controllers
 				TempData["Error"] = "Cannot delete this vehicle because it has associated historical records in the database.";
 			}
 
-			return RedirectToAction("Index");
-		}
-	}
+        // Added detail view just in case it's needed for the eye icon
+        [HttpGet]
+        public IActionResult GetVehicleDetails(int id)
+        {
+            if (!CanView()) return RedirectToAction("Login", "Account");
+            var vehicleData = _vehicleSvc.GetVehicleDetails(id);
+            if (vehicleData == null) return NotFound();
+            return View(vehicleData);
+        }
+    }
 }

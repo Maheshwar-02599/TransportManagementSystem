@@ -2,8 +2,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace TransportationManagement.Controllers
 {
@@ -14,13 +18,14 @@ namespace TransportationManagement.Controllers
 		private readonly DriverService _driverService;
 		private readonly FuelService _fuelService;
 
-		public TripController(TripService tripService, VehicleService vehicleService, DriverService driverService, FuelService fuelService)
-		{
-			_tripService = tripService;
-			_vehicleService = vehicleService;
-			_driverService = driverService;
-			_fuelService = fuelService;
-		}
+        public TripController(TripService tripService, VehicleService vehicleService,
+                              DriverService driverService, FuelService fuelService)
+        {
+            _tripService = tripService;
+            _vehicleService = vehicleService;
+            _driverService = driverService;
+            _fuelService = fuelService;
+        }
 
 		private bool CanView()
 		{
@@ -61,8 +66,15 @@ namespace TransportationManagement.Controllers
 								  t.Driver.name.ToLower().Trim().Contains(emailPrefix))
 								  .ToList();
 
-				return View(driverTrips);
-			}
+                if (driverRecord != null)
+                {
+                    var myTrips = _tripService.GetAllTrips()
+                        .Where(t => t.driverId == driverRecord.driverId)
+                        .ToList();
+                    return View(myTrips);
+                }
+                return View(new List<Trip>());
+            }
 
 			return View(allTrips);
 		}

@@ -8,7 +8,10 @@ namespace TransportationManagement.Services
 	public class DriverService
 	{
 		private readonly IDriverRepository _repo;
-		public DriverService(IDriverRepository repo) { _repo = repo; }
+		public DriverService(IDriverRepository repo, ITripRepository tripRepo) { 
+		_repo = repo;
+			_tripRepo = tripRepo;
+		}
 
 		public async Task<List<Driver>> GetAllDriversAsync() => await _repo.GetAllDriversAsync();
 		public async Task<Driver?> GetDriverDetailsAsync(int id) => await _repo.GetDriverByIdAsync(id);
@@ -18,7 +21,7 @@ namespace TransportationManagement.Services
 		public async Task DeleteDriverAsync(int id) => await _repo.DeleteDriverAsync(id);
 
 		// Updated to use the async version of the TripRepo method
-		public async Task<List<Trip>> GetAssignedTripsAsync(int driverId, ITripRepository tripRepo)
-			=> await tripRepo.GetTripsByDriverIdAsync(driverId);
+		public async Task<List<Trip>> GetAssignedTripsAsync(int driverId)
+			=> await _tripRepo.GetTripsByDriverIdAsync(driverId);
 	}
 } 

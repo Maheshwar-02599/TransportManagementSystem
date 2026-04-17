@@ -11,18 +11,18 @@ namespace TransportationManagement.Controllers
 {
 	public class AdminController : Controller
 	{
-		private readonly ApplicationDbContext _context;
+		private readonly AccountService _accountService;
 		private readonly VehicleService _vehicleService;
 		private readonly DriverService _driverService;
 		private readonly TripService _tripService;
 		private readonly MaintenanceService _maintenanceService;
 		private readonly FuelService _fuelService;
 
-		public AdminController(ApplicationDbContext context, VehicleService vehicleService,
+		public AdminController(AccountService accountService, VehicleService vehicleService,
 			DriverService driverService, TripService tripService,
 			MaintenanceService maintenanceService, FuelService fuelService)
 		{
-			_context = context;
+			_accountService = accountService;
 			_vehicleService = vehicleService;
 			_driverService = driverService;
 			_tripService = tripService;
@@ -31,8 +31,6 @@ namespace TransportationManagement.Controllers
 		}
 
 		private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
-		private bool IsLoggedIn() => HttpContext.Session.GetString("Username") != null;
-
 		public async Task<IActionResult> Dashboard()
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
@@ -61,7 +59,7 @@ namespace TransportationManagement.Controllers
 		public async Task<IActionResult> Users()
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
-			return View(await _context.Users.ToListAsync());
+			return View(await _accountService.GetAllUsers());
 		}
 
 		[HttpGet]
@@ -78,14 +76,13 @@ namespace TransportationManagement.Controllers
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
 			if (ModelState.IsValid)
 			{
-				if (await _context.Users.AnyAsync(u => u.Username == model.Username))
+				if (await _accountService.IsUsernameTaken(model.Username))
 				{
 					ModelState.AddModelError("Username", "Email already exists.");
 					return View(model);
 				}
 
-				await _context.Users.AddAsync(new User { Username = model.Username, Password = PasswordHelper.HashPassword(model.Password), Role = model.Role });
-				await _context.SaveChangesAsync();
+				await _accountService.CreateAccount(model);
 
 				TempData["Success"] = "User created successfully.";
 				return RedirectToAction("Users");
@@ -97,7 +94,7 @@ namespace TransportationManagement.Controllers
 		public async Task<IActionResult> EditUser(int id)
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
-			var user = await _context.Users.FindAsync(id);
+			var user = await _accountService.GetUserById(id);
 			if (user == null) return NotFound();
 			return View(user);
 		}
@@ -107,13 +104,7 @@ namespace TransportationManagement.Controllers
 		public async Task<IActionResult> EditUser(User user)
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
-			var existing = await _context.Users.FindAsync(user.Id);
-			if (existing == null) return NotFound();
-
-			existing.Username = user.Username;
-			existing.Role = user.Role;
-			await _context.SaveChangesAsync();
+			await _accountService.UpdateUser(user);
 
 			TempData["Success"] = "User updated.";
 			return RedirectToAction("Users");
@@ -125,13 +116,8 @@ namespace TransportationManagement.Controllers
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
-			var user = await _context.Users.FindAsync(id);
-			if (user != null)
-			{
-				_context.Users.Remove(user);
-				await _context.SaveChangesAsync();
-				TempData["Success"] = "User deleted.";
-			}
+			_accountService.RemoveUser(id);
+			TempData["Success"] = "User deleted.";
 			return RedirectToAction("Users");
 		}
 
