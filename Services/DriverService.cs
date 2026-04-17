@@ -8,6 +8,7 @@ namespace TransportationManagement.Services
 	public class DriverService
 	{
 		private readonly IDriverRepository _repo;
+		private readonly ITripRepository _tripRepo;
 		public DriverService(IDriverRepository repo, ITripRepository tripRepo) { 
 		_repo = repo;
 			_tripRepo = tripRepo;

@@ -151,15 +151,7 @@ namespace TransportationManagement.Controllers
 			{
 				TempData["Error"] = "Cannot delete this vehicle because it has associated historical records in the database.";
 			}
-
-        // Added detail view just in case it's needed for the eye icon
-        [HttpGet]
-        public IActionResult GetVehicleDetails(int id)
-        {
-            if (!CanView()) return RedirectToAction("Login", "Account");
-            var vehicleData = _vehicleSvc.GetVehicleDetails(id);
-            if (vehicleData == null) return NotFound();
-            return View(vehicleData);
-        }
+		}
+        
     }
 }

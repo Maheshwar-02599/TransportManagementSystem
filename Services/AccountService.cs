@@ -11,12 +11,12 @@ namespace TransportationManagement.Services
         private readonly AccountRepository _repo;
         public AccountService(AccountRepository repo) { _repo = repo; }
 
-        public List<User> GetAllUsers() => _repo.GetAllUsers();
-        public int GetTotalUserCount() => _repo.GetUserCount();
-        public User? GetUserById(int id) => _repo.GetUserById(id);
-        public bool IsUsernameTaken(string username) => _repo.CheckIfUserExists(username);
+        public async Task<List<User>> GetAllUsers() => await _repo.GetAllUsers();
+        public async Task<int> GetTotalUserCount() =>await  _repo.GetUserCount();
+        public async Task<User?> GetUserById(int id) =>await  _repo.GetUserById(id);
+        public async Task<bool> IsUsernameTaken(string username) => await _repo.CheckIfUserExists(username);
 
-        public void CreateAccount(RegisterViewModel model)
+        public async Task CreateAccount(RegisterViewModel model)
         {
             var user = new User
             {
@@ -24,11 +24,11 @@ namespace TransportationManagement.Services
                 Password = PasswordHelper.HashPassword(model.Password),
                 Role = model.Role
             };
-            _repo.RegisterUser(user);
+            await _repo.RegisterUser(user);
         }
 
 
-        public void UpdateUser(User user) => _repo.UpdateUser(user);
+        public async Task UpdateUser(User user) => await _repo.UpdateUser(user);
         public void RemoveUser(int id) => _repo.DeleteUser(id);
 
         public User? Authenticate(string username, string password)

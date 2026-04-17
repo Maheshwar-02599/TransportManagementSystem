@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using TransportationManagement.Data;
 using TransportationManagement.Interfaces;
 using TransportationManagement.Models;

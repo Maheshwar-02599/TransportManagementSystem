@@ -18,6 +18,6 @@ namespace TransportationManagement.Services
 		public async Task UpdateVehicleAsync(Vehicle v) => await _repo.UpdateVehicleAsync(v);
 
 		public async Task DeleteVehicleAsync(int id) => await _repo.DeleteVehicleAsync(id);
-		public List<Vehicle> ListAllVehicles() => _repo.GetAllVehicles();
+		public async Task<List<Vehicle>> ListAllVehicles() => await _repo.GetAllVehiclesAsync();
 	}
 }

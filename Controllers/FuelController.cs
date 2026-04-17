@@ -132,6 +132,7 @@ namespace TransportationManagement.Controllers
 
 			var entry = await _fuelService.GetFuelEntryByIdAsync(id);
 			if (entry == null) return NotFound();
+		}
 
         public IActionResult GetFuelConsumption(int vehicleId)
         {

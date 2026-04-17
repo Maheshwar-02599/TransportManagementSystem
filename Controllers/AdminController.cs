@@ -50,7 +50,7 @@ namespace TransportationManagement.Controllers
 				TotalTrips = trips.Count,
 				TotalMaintenance = maintenance.Count,
 				TotalFuelEntries = fuel.Count,
-				TotalUsers = await _context.Users.CountAsync() // Entity Framework Async Count
+				TotalUsers = await _accountService.GetTotalUserCount()
 			};
 
 			return View(model);

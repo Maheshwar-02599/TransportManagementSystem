@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using TransportationManagement.Data;
 using TransportationManagement.Models;
 
@@ -10,28 +11,28 @@ namespace TransportationManagement.Repositories
         private readonly ApplicationDbContext _context;
         public AccountRepository(ApplicationDbContext context) { _context = context; }
 
-        public List<User> GetAllUsers() => _context.Users.ToList();
+        public async Task<List<User>> GetAllUsers() => await _context.Users.ToListAsync();
 
-        public int GetUserCount() => _context.Users.Count();
+        public async Task<int> GetUserCount() =>await _context.Users.CountAsync();
 
-        public User? GetUserById(int id) => _context.Users.Find(id);
+        public async Task<User?> GetUserById(int id) => await _context.Users.FindAsync(id);
 
-        public bool CheckIfUserExists(string username) => _context.Users.Any(u => u.Username == username);
+        public async Task<bool> CheckIfUserExists(string username) => await _context.Users.AnyAsync(u => u.Username == username);
         
-        public void RegisterUser(User user)
+        public async Task RegisterUser(User user)
         {
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
         }
 
-        public void UpdateUser(User user)
+        public async Task UpdateUser(User user)
         {
-            var existing = _context.Users.Find(user.Id);
+            var existing =await _context.Users.FindAsync(user.Id);
             if (existing != null)
             {
                 existing.Username = user.Username;
                 existing.Role = user.Role;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
         }
 
