@@ -26,7 +26,7 @@ namespace TransportationManagement.Controllers
 		private bool CanEdit()
 		{
 			var r = HttpContext.Session.GetString("Role");
-			return r =="MaintenanceEngineer";
+			return r == "FleetManager" ||r =="MaintenanceEngineer";
 		}
 
 		private async Task LoadVehicles()
