@@ -12,5 +12,6 @@ namespace TransportationManagement.Interfaces
 		Task AddTripAsync(Trip trip);
 		Task UpdateTripAsync(Trip trip);
 		Task DeleteTripAsync(int tripId);
+		Task<List<Trip>> GetAllTripsEmail(string email);
 	}
 }

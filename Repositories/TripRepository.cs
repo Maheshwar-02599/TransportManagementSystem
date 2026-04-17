@@ -17,6 +17,10 @@ namespace TransportationManagement.Repositories
 		public async Task<List<Trip>> GetAllTripsAsync()
 			=> await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).ToListAsync();
 
+		public async Task<List<Trip>> GetAllTripsEmail(string email){
+			return await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).Where(t => t.Driver != null && t.Driver.contactNumber == email || t.Driver.name == email)
+						.ToListAsync();
+		}
 		public async Task<Trip?> GetTripByIdAsync(int tripId)
 			=> await _context.Trips.Include(t => t.Vehicle).Include(t => t.Driver).FirstOrDefaultAsync(t => t.tripId == tripId);
 

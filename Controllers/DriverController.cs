@@ -62,10 +62,9 @@ namespace TransportationManagement.Controllers
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
 
-			if (!ModelState.IsValid)
-			{
-				return View(model);
-			}
+			
+				
+			
 
 			
 			if (await _accountService.IsUsernameTaken(model.Username))
@@ -74,28 +73,25 @@ namespace TransportationManagement.Controllers
 				return View(model);
 			}
 
-			try
+			if (ModelState.IsValid)
 			{
-				var user = new User
+				await _driverService.AddDriverAsync(model.Driver);
+				var userAccount = new RegisterViewModel
 				{
 					Username = model.Username,
-					Password = Data.PasswordHelper.HashPassword(model.Password),
+					Password=model.Password,
+					ConfirmPassword=model.ConfirmPassword,
 					Role = "Driver"
 				};
-				await _context.Users.AddAsync(user);
-				await _context.SaveChangesAsync();
-
-				model.Driver.UserId = user.Id;
-				await _driverService.AddDriverAsync(model.Driver);
+				await _accountService.CreateAccount(userAccount);
+				
 
 				TempData["Success"] = "Driver created successfully.";
 				return RedirectToAction("Index");
 			}
-			catch (Exception ex)
-			{
-				ModelState.AddModelError(string.Empty, "Error creating driver: " + ex.Message);
+			
 				return View(model);
-			}
+			
 		}
 
 		[HttpGet]
@@ -187,9 +183,9 @@ namespace TransportationManagement.Controllers
 			bool isDriverBusy = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
             // BUSINESS RULE: Cannot delete if Driver is currently on a trip
-            if (driver.status == DriverStatus.ON_TRIP)
+            if (isDriverBusy)
             {
-                TempData["Error"] = $"Constraint Failed: Cannot delete {driver.name} while they are ON_TRIP.";
+                TempData["Error"] = $"Constraint Failed: Cannot delete this driver because he is currently ON_TRIP.";
                 return RedirectToAction("Index");
             }
 

@@ -66,14 +66,8 @@ namespace TransportationManagement.Controllers
 								  t.Driver.name.ToLower().Trim().Contains(emailPrefix))
 								  .ToList();
 
-                if (driverRecord != null)
-                {
-                    var myTrips = _tripService.GetAllTrips()
-                        .Where(t => t.driverId == driverRecord.driverId)
-                        .ToList();
-                    return View(myTrips);
-                }
-                return View(new List<Trip>());
+               
+                return View(driverTrips);
             }
 
 			return View(allTrips);

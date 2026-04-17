@@ -151,6 +151,7 @@ namespace TransportationManagement.Controllers
 			{
 				TempData["Error"] = "Cannot delete this vehicle because it has associated historical records in the database.";
 			}
+			return RedirectToAction("Index");
 		}
         
     }

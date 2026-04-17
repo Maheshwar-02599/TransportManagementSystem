@@ -48,11 +48,11 @@ namespace TransportationManagement.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                if (_accountService.IsUsernameTaken(model.Username))
+                if (await _accountService.IsUsernameTaken(model.Username))
                 {
                     ModelState.AddModelError("Username", "This email is already registered.");
                     return View(model);

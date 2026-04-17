@@ -19,10 +19,7 @@ namespace TransportationManagement.Services
 		public async Task DeleteTripAsync(int id) => await _repo.DeleteTripAsync(id);
 		public async Task<List<Trip>> GetTripsByDriverEmail(string email)
 		{
-			// We filter trips where the associated Driver's contact/email matches the logged in user
-			// Or, more accurately, we find trips where the Driver record is linked to that User
-			return await _repo.GetAllTripsAsync().Where(t => t.Driver != null && t.Driver.contactNumber == email || t.Driver.name == email)
-						.ToList();
+			return await _repo.GetAllTripsEmail(email);
 		}
 	}
 }
