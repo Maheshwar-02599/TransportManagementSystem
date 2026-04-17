@@ -60,15 +60,13 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 }
-                                @if (u.Role != "Admin")
-                                {
+                                
                                 <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this user?')">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
-                                }
                             </td>
                         </tr>
                     }
