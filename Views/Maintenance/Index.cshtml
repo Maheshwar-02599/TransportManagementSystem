@@ -11,7 +11,7 @@
         <h3 class="mb-0 fw-bold">Maintenance Records</h3>
     </div>
     
-    @if (Context.Session.GetString("Role") == "FleetManager" || Context.Session.GetString("Role") == "Admin")
+    @if (Context.Session.GetString("Role") == "FleetManager")
     {
         <a asp-action="ScheduleMaintenance" class="btn btn-danger rounded-pill shadow-sm px-4">
             <i class="fas fa-plus me-2"></i>Schedule Maintenance
@@ -73,7 +73,7 @@
                                 <i class="fas fa-eye"></i>
                             </a>
     
-                            @if (Context.Session.GetString("Role") == "MaintenanceEngineer" || Context.Session.GetString("Role") == "Admin")
+                            @if (Context.Session.GetString("Role") == "MaintenanceEngineer")
                             {
                                 @if (displayStatus != "Completed")
                                 {

@@ -31,14 +31,14 @@ namespace TransportationManagement.Controllers
 		{
 			var r = HttpContext.Session.GetString("Role");
 			// ONLY FleetManager and Admin can schedule
-			return r == "FleetManager" || r == "Admin";
+			return r == "FleetManager";
 		}
 
 		private bool CanManageRecords()
 		{
 			var r = HttpContext.Session.GetString("Role");
 			// ONLY MaintenanceEngineer and Admin can Edit, Delete, or Complete
-			return r == "MaintenanceEngineer" || r == "Admin";
+			return r == "MaintenanceEngineer";
 		}
 
 		private async Task LoadVehicles()
