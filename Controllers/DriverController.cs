@@ -79,7 +79,6 @@ namespace TransportationManagement.Controllers
 
 			if (ModelState.IsValid)
 			{
-				// 1. Create the User Account FIRST
 				var userAccount = new RegisterViewModel
 				{
 					Username = model.Username,
@@ -88,13 +87,12 @@ namespace TransportationManagement.Controllers
 					Role = "Driver"
 				};
 
-				// 2. Grab the new generated UserId
 				int newUserId = await _accountService.CreateAccount(userAccount);
-
-				// 3. Link the Driver to the new User Account
 				model.Driver.UserId = newUserId;
 
-				// 4. NOW save the Driver to the database
+				// Ensure new drivers start as available
+				model.Driver.status = DriverStatus.AVAILABLE;
+
 				await _driverService.AddDriverAsync(model.Driver);
 
 				TempData["Success"] = "Driver and login created successfully.";
@@ -171,6 +169,13 @@ namespace TransportationManagement.Controllers
 			{
 				try
 				{
+					// Fetch existing driver to preserve the Status since it's removed from the Edit UI
+					var existingDriver = await _driverService.GetDriverDetailsAsync(driverData.driverId);
+					if (existingDriver != null)
+					{
+						driverData.status = existingDriver.status;
+					}
+
 					await _driverService.UpdateDriverAsync(driverData);
 					TempData["Success"] = "Driver updated successfully.";
 					return RedirectToAction("Index");
@@ -183,57 +188,40 @@ namespace TransportationManagement.Controllers
 			return View(driverData);
 		}
 
-		[HttpGet]
-		public async Task<IActionResult> Delete(int id)
-		{
-			if (!CanEdit()) return RedirectToAction("Index");
-			var driverData = await _driverService.GetDriverDetailsAsync(id);
-			if (driverData == null) return NotFound();
-			return View(driverData);
-		}
-
-		[HttpPost, ActionName("Delete")]
+		// --- NEW: Enable/Disable Toggle Action ---
+		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> DeleteConfirmed(int id)
+		public async Task<IActionResult> ToggleDriverStatus(int id)
 		{
 			if (!CanEdit()) return RedirectToAction("Index");
 
+			// LOGIC CHECK: Do not allow disabling if they are currently on a trip
 			var allTrips = await _tripService.GetAllTripsAsync();
-			bool isDriverBusy = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
+			bool isBusy = allTrips.Any(t => t.driverId == id && t.tripStatus != TripStatus.COMPLETED);
 
-			if (isDriverBusy)
+			if (isBusy)
 			{
-				TempData["Error"] = $"Constraint Failed: Cannot delete this driver because he is currently ON_TRIP.";
-				return RedirectToAction("Index");
+				TempData["Error"] = "Cannot change status. This driver is currently ON_TRIP.";
+				return RedirectToAction(nameof(Index));
 			}
 
-			try
+			var driver = await _driverService.GetDriverDetailsAsync(id);
+			if (driver == null) return NotFound();
+
+			// Toggle the Enum status
+			if (driver.status == DriverStatus.AVAILABLE)
 			{
-				// 1. Fetch the driver to safely grab the UserId before we delete them
-				var driverToDelete = await _driverService.GetDriverDetailsAsync(id);
-
-				if (driverToDelete != null)
-				{
-					int? userIdToRemove = driverToDelete.UserId;
-
-					// 2. Delete the Driver record
-					await _driverService.DeleteDriverAsync(id);
-
-					// 3. Delete the Admin User Account using your new AccountService!
-					if (userIdToRemove.HasValue)
-					{
-						_accountService.RemoveUser(userIdToRemove.Value);
-					}
-
-					TempData["Success"] = "Driver profile and login account deleted successfully.";
-				}
+				driver.status = DriverStatus.INACTIVE;
 			}
-			catch (Exception)
+			else
 			{
-				TempData["Error"] = "Cannot delete this driver because they have associated route history in the database.";
+				driver.status = DriverStatus.AVAILABLE;
 			}
 
-			return RedirectToAction("Index");
+			await _driverService.UpdateDriverAsync(driver);
+			TempData["Success"] = $"Driver status changed to {driver.status}.";
+
+			return RedirectToAction(nameof(Index));
 		}
 	}
 }

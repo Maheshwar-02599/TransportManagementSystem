@@ -6,6 +6,7 @@ using TransportationManagement.Data;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 using TransportationManagement.ViewModels;
+using Microsoft.AspNetCore.Http;
 
 namespace TransportationManagement.Controllers
 {
@@ -31,18 +32,17 @@ namespace TransportationManagement.Controllers
 		}
 
 		private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
+
 		public async Task<IActionResult> Dashboard()
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
-			// 1. Fetch data asynchronously
 			var vehicles = await _vehicleService.GetAllVehiclesAsync();
 			var drivers = await _driverService.GetAllDriversAsync();
 			var trips = await _tripService.GetAllTripsAsync();
 			var maintenance = await _maintenanceService.GetAllMaintenanceRecordsAsync();
 			var fuel = await _fuelService.GetAllFuelEntriesAsync();
 
-			// 2. Map to ViewModel
 			var model = new AdminDashboardViewModel
 			{
 				TotalVehicles = vehicles.Count,
@@ -101,10 +101,48 @@ namespace TransportationManagement.Controllers
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> EditUser(User user)
+		public async Task<IActionResult> EditUser(User user, string? OldPassword, string? NewPassword)
 		{
 			if (!IsAdmin()) return RedirectToAction("Login", "Account");
-			await _accountService.UpdateUser(user);
+
+			// 1. Fetch the existing user
+			var existingUser = await _accountService.GetUserById(user.Id);
+			if (existingUser == null) return NotFound();
+
+			// 2. PASSWORD VERIFICATION LOGIC
+			if (!string.IsNullOrWhiteSpace(NewPassword))
+			{
+				// Require old password if trying to set a new one
+				if (string.IsNullOrWhiteSpace(OldPassword))
+				{
+					ModelState.AddModelError(string.Empty, "You must enter the current password to set a new password.");
+					return View(user);
+				}
+
+				// --- NEW VALIDATION: Check if new password is the same as the old one ---
+				if (NewPassword == OldPassword)
+				{
+					ModelState.AddModelError(string.Empty, "The new password cannot be the same as the current password.");
+					return View(user);
+				}
+				// ------------------------------------------------------------------------
+
+				// Hash the input old password and compare it to the database
+				string hashedOldPassword = PasswordHelper.HashPassword(OldPassword);
+
+				if (existingUser.Password != hashedOldPassword)
+				{
+					ModelState.AddModelError(string.Empty, "The current password you entered is incorrect.");
+					return View(user);
+				}
+			}
+
+			// 3. Map the new values from the form
+			existingUser.Username = user.Username;
+			existingUser.Role = user.Role;
+
+			// 4. Update the user
+			await _accountService.UpdateUser(existingUser, NewPassword);
 
 			TempData["Success"] = "User updated.";
 			return RedirectToAction("Users");
@@ -121,7 +159,6 @@ namespace TransportationManagement.Controllers
 			return RedirectToAction("Users");
 		}
 
-		// Updated Quick Action list methods
 		public async Task<IActionResult> Vehicles() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(await _vehicleService.GetAllVehiclesAsync()); }
 		public async Task<IActionResult> Drivers() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(await _driverService.GetAllDriversAsync()); }
 		public async Task<IActionResult> Trips() { if (!IsAdmin()) return RedirectToAction("Login", "Account"); return View(await _tripService.GetAllTripsAsync()); }

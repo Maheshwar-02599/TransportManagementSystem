@@ -9,6 +9,18 @@
             <i class="fas fa-users fa-lg px-1"></i>
         </div>
         <h3 class="mb-0 fw-bold">System Users</h3>
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger border-0 shadow-sm rounded-3 fw-bold">
+                <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+            </div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success border-0 shadow-sm rounded-3">
+                <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            </div>
+        }
     </div>
     <a asp-action="CreateUser" class="btn btn-dark rounded-pill shadow-sm px-4"><i class="fas fa-user-plus me-2"></i>Add User</a>
 </div>

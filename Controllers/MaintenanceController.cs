@@ -12,13 +12,13 @@ namespace TransportationManagement.Controllers
 	{
 		private readonly MaintenanceService _maintenanceService;
 		private readonly VehicleService _vehicleService;
-		private readonly TripService _tripService; // Added TripService
+		private readonly TripService _tripService;
 
 		public MaintenanceController(MaintenanceService maintenanceService, VehicleService vehicleService, TripService tripService)
 		{
 			_maintenanceService = maintenanceService;
 			_vehicleService = vehicleService;
-			_tripService = tripService; // Injected TripService
+			_tripService = tripService;
 		}
 
 		private bool CanView()
@@ -27,10 +27,18 @@ namespace TransportationManagement.Controllers
 			return r == "Admin" || r == "FleetManager" || r == "MaintenanceEngineer";
 		}
 
-		private bool CanEdit()
+		private bool CanSchedule()
 		{
 			var r = HttpContext.Session.GetString("Role");
-			return r == "FleetManager" || r == "MaintenanceEngineer";
+			// ONLY FleetManager and Admin can schedule
+			return r == "FleetManager" || r == "Admin";
+		}
+
+		private bool CanManageRecords()
+		{
+			var r = HttpContext.Session.GetString("Role");
+			// ONLY MaintenanceEngineer and Admin can Edit, Delete, or Complete
+			return r == "MaintenanceEngineer" || r == "Admin";
 		}
 
 		private async Task LoadVehicles()
@@ -46,10 +54,12 @@ namespace TransportationManagement.Controllers
 			return View(records);
 		}
 
+		// --- SCHEDULING (Fleet Manager Only) ---
+
 		[HttpGet]
 		public async Task<IActionResult> ScheduleMaintenance()
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanSchedule()) return RedirectToAction("Index");
 			await LoadVehicles();
 			return View();
 		}
@@ -58,9 +68,8 @@ namespace TransportationManagement.Controllers
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> ScheduleMaintenance(MaintenanceRecord record)
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanSchedule()) return RedirectToAction("Index");
 
-			// --- NEW VEHICLE CONTENTION CHECK ---
 			var allTrips = await _tripService.GetAllTripsAsync();
 			bool isVehicleAssigned = allTrips.Any(t => t.vehicleId == record.vehicleId && t.tripStatus != TripStatus.COMPLETED);
 
@@ -68,7 +77,6 @@ namespace TransportationManagement.Controllers
 			{
 				ModelState.AddModelError("vehicleId", "Cannot schedule maintenance: This vehicle is already assigned to a Planned or Active trip.");
 			}
-			// ------------------------------------
 
 			if (ModelState.IsValid)
 			{
@@ -89,10 +97,12 @@ namespace TransportationManagement.Controllers
 			return View(record);
 		}
 
+		// --- MANAGING RECORDS (Maintenance Engineer Only) ---
+
 		[HttpGet]
 		public async Task<IActionResult> UpdateServiceRecord(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanManageRecords()) return RedirectToAction("Index");
 			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record == null) return NotFound();
 			await LoadVehicles();
@@ -103,7 +113,7 @@ namespace TransportationManagement.Controllers
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> UpdateServiceRecord(MaintenanceRecord record)
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanManageRecords()) return RedirectToAction("Index");
 			if (ModelState.IsValid)
 			{
 				await _maintenanceService.UpdateServiceRecordAsync(record);
@@ -114,18 +124,10 @@ namespace TransportationManagement.Controllers
 			return View(record);
 		}
 
-		public async Task<IActionResult> GetMaintenanceHistory(int vehicleId)
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
-			var records = await _maintenanceService.GetMaintenanceHistoryAsync(vehicleId);
-			ViewBag.VehicleId = vehicleId;
-			return View(records);
-		}
-
 		[HttpGet]
 		public async Task<IActionResult> Delete(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanManageRecords()) return RedirectToAction("Index");
 			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record == null) return NotFound();
 			return View(record);
@@ -135,28 +137,17 @@ namespace TransportationManagement.Controllers
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> DeleteConfirmed(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanManageRecords()) return RedirectToAction("Index");
 			await _maintenanceService.DeleteMaintenanceAsync(id);
 			TempData["Success"] = "Record deleted.";
 			return RedirectToAction("Index");
-		}
-
-		[HttpGet]
-		public async Task<IActionResult> GetMaintenanceDetails(int id)
-		{
-			if (!CanView()) return RedirectToAction("Login", "Account");
-
-			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
-			if (record == null) return NotFound();
-
-			return View(record);
 		}
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> CompleteMaintenance(int id)
 		{
-			if (!CanEdit()) return RedirectToAction("Index");
+			if (!CanManageRecords()) return RedirectToAction("Index");
 
 			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
 			if (record != null)
@@ -178,6 +169,27 @@ namespace TransportationManagement.Controllers
 				TempData["Success"] = "Service completed! Record frozen and Vehicle is now ACTIVE.";
 			}
 			return RedirectToAction("Index");
+		}
+
+		// --- VIEWING DETAILS (Everyone) ---
+
+		public async Task<IActionResult> GetMaintenanceHistory(int vehicleId)
+		{
+			if (!CanView()) return RedirectToAction("Login", "Account");
+			var records = await _maintenanceService.GetMaintenanceHistoryAsync(vehicleId);
+			ViewBag.VehicleId = vehicleId;
+			return View(records);
+		}
+
+		[HttpGet]
+		public async Task<IActionResult> GetMaintenanceDetails(int id)
+		{
+			if (!CanView()) return RedirectToAction("Login", "Account");
+
+			var record = await _maintenanceService.GetMaintenanceByIdAsync(id);
+			if (record == null) return NotFound();
+
+			return View(record);
 		}
 	}
 }

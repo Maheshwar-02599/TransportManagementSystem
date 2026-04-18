@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Http; // Needed for Session.GetInt32
+using Microsoft.AspNetCore.Http;
 using TransportationManagement.Models;
 using TransportationManagement.Services;
 
@@ -38,13 +38,20 @@ namespace TransportationManagement.Controllers
 			return r == "FleetManager";
 		}
 
+		// --- FIXED: Filter out Disabled/In-Service Vehicles and Drivers ---
 		private async Task LoadDropdowns()
 		{
-			var vehicles = await _vehicleService.GetAllVehiclesAsync();
-			var drivers = await _driverService.GetAllDriversAsync();
+			var allVehicles = await _vehicleService.GetAllVehiclesAsync();
+			var allDrivers = await _driverService.GetAllDriversAsync();
 
-			ViewBag.Vehicles = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicles, "vehicleId", "vehicleNumber");
-			ViewBag.Drivers = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(drivers, "driverId", "name");
+			// Only show vehicles that are explicitly ACTIVE (ignores IN_SERVICE and RETIRED/Disabled)
+			var availableVehicles = allVehicles.Where(v => v.vehiclestatus == VehicleStatus.ACTIVE).ToList();
+
+			// Only show drivers that are explicitly AVAILABLE (ignores INACTIVE/Disabled)
+			var availableDrivers = allDrivers.Where(d => d.status == DriverStatus.AVAILABLE).ToList();
+
+			ViewBag.Vehicles = new SelectList(availableVehicles, "vehicleId", "vehicleNumber");
+			ViewBag.Drivers = new SelectList(availableDrivers, "driverId", "name");
 		}
 
 		[HttpGet]
@@ -55,30 +62,25 @@ namespace TransportationManagement.Controllers
 			var allTrips = await _tripService.GetAllTripsAsync();
 			var role = HttpContext.Session.GetString("Role");
 
-			// --- FIXED: SECURE USER ID LOOKUP INSTEAD OF EMAIL MATCHING ---
 			if (role == "Driver")
 			{
 				int? currentUserId = HttpContext.Session.GetInt32("UserId");
 
 				if (currentUserId.HasValue)
 				{
-					// Get the EXACT driver profile tied to this login
 					var currentDriver = await _driverService.GetDriverByUserIdAsync(currentUserId.Value);
 
 					if (currentDriver != null)
 					{
-						// Filter trips exactly by DriverId
 						var driverTrips = allTrips.Where(t => t.driverId == currentDriver.driverId).ToList();
 						return View(driverTrips);
 					}
 					else
 					{
-						// Failsafe: If no profile exists yet, show empty list
 						return View(new List<Trip>());
 					}
 				}
 			}
-			// --------------------------------------------------------------
 
 			return View(allTrips);
 		}
@@ -155,11 +157,19 @@ namespace TransportationManagement.Controllers
 			ModelState.Remove("Vehicle");
 			ModelState.Remove("Driver");
 
+			// --- FIXED: Strict validation to prevent forced assignments ---
 			var fleetVehicle = await _vehicleService.GetVehicleDetailsAsync(trip.vehicleId);
-			if (fleetVehicle != null && fleetVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
+			if (fleetVehicle != null && fleetVehicle.vehiclestatus != VehicleStatus.ACTIVE)
 			{
-				ModelState.AddModelError("vehicleId", "Cannot assign trip: This vehicle is currently IN_SERVICE (Under Maintenance).");
+				ModelState.AddModelError("vehicleId", "Cannot assign trip: This vehicle is either disabled or under maintenance.");
 			}
+
+			var assignedDriver = await _driverService.GetDriverDetailsAsync(trip.driverId);
+			if (assignedDriver != null && assignedDriver.status != DriverStatus.AVAILABLE)
+			{
+				ModelState.AddModelError("driverId", "Cannot assign trip: This driver is disabled or currently unavailable.");
+			}
+			// --------------------------------------------------------------
 
 			if (ModelState.IsValid)
 			{
@@ -205,11 +215,19 @@ namespace TransportationManagement.Controllers
 			ModelState.Remove("Vehicle");
 			ModelState.Remove("Driver");
 
+			// --- FIXED: Strict validation for updates as well ---
 			var selectedVehicle = await _vehicleService.GetVehicleDetailsAsync(routeModel.vehicleId);
-			if (selectedVehicle != null && selectedVehicle.vehiclestatus == VehicleStatus.IN_SERVICE)
+			if (selectedVehicle != null && selectedVehicle.vehiclestatus != VehicleStatus.ACTIVE)
 			{
-				ModelState.AddModelError("vehicleId", "This vehicle is currently under service.");
+				ModelState.AddModelError("vehicleId", "This vehicle is either disabled or currently under service.");
 			}
+
+			var selectedDriver = await _driverService.GetDriverDetailsAsync(routeModel.driverId);
+			if (selectedDriver != null && selectedDriver.status != DriverStatus.AVAILABLE)
+			{
+				ModelState.AddModelError("driverId", "This driver is disabled or currently unavailable.");
+			}
+			// ----------------------------------------------------
 
 			if (ModelState.IsValid)
 			{

@@ -57,7 +57,7 @@ namespace TransportationManagement.Controllers
                     ModelState.AddModelError("Username", "This email is already registered.");
                     return View(model);
                 }
-                _accountService.CreateAccount(model);
+                await _accountService.CreateAccount(model);
                 TempData["Success"] = "Registration successful! Please log in.";
                 return RedirectToAction("Login");
             }

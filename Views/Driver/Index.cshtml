@@ -51,15 +51,30 @@
                 <td class="py-3">@drv.licenseNumber</td>
                 <td class="py-3">@drv.contactNumber</td>
                 <td class="py-3"><span class="badge rounded-pill @badgeClass">@currentStatus</span></td>
-                <td class="text-end pe-4 py-3">
-                    <a asp-action="GetDriverDetails" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-info rounded-circle shadow-sm me-1" title="View Details"><i class="fas fa-eye"></i></a>
-                    <a asp-action="GetAssignedTrips" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm me-1" title="View Trips"><i class="fas fa-route"></i></a>
-                    
-                    @if(Context.Session.GetString("Role") == "FleetManager"){
-                        <a asp-action="Edit" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-warning rounded-circle shadow-sm me-1" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a asp-action="Delete" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete"><i class="fas fa-trash"></i></a>
-                    }
-                </td>
+                        <td class="text-end pe-4 py-3">
+                            <a asp-action="GetDriverDetails" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-info rounded-circle shadow-sm me-1" title="View Details"><i class="fas fa-eye"></i></a>
+                            <a asp-action="GetAssignedTrips" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm me-1" title="View Trips"><i class="fas fa-route"></i></a>
+    
+                            @if (Context.Session.GetString("Role") == "FleetManager")
+                            {
+                                <a asp-action="Edit" asp-route-id="@drv.driverId" class="btn btn-light btn-sm text-warning rounded-circle shadow-sm me-1" title="Edit"><i class="fas fa-edit"></i></a>
+        
+                                <form asp-action="ToggleDriverStatus" asp-route-id="@drv.driverId" method="post" class="d-inline">
+                                    @if (isBusy)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm rounded shadow-sm" disabled title="Currently on a trip">On Trip</button>
+                                    }
+                                    else if (drv.status.ToString() == "AVAILABLE")
+                                    {
+                                        <button type="submit" class="btn btn-danger btn-sm rounded shadow-sm" onclick="return confirm('Disable this driver? They will not be able to take new trips.');">Disable</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="btn btn-success btn-sm rounded shadow-sm">Enable</button>
+                                    }
+                                </form>
+                            }
+                        </td>
             </tr>
             }
             @if(!Model.Any()){<tr><td colspan="6" class="text-center text-muted py-5">No drivers found.</td></tr>}

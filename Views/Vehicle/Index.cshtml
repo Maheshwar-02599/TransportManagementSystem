@@ -51,14 +51,29 @@
                 <td class="py-3">@veh.model</td>
                 <td class="py-3">@veh.capacity</td>
                 <td class="py-3"><span class="badge rounded-pill @liveBadge px-3 py-2">@liveStatus</span></td>
-                <td class="text-end pe-4 py-3">
-                    <a asp-action="GetVehicleDetails" asp-route-id="@veh.vehicleId" class="btn btn-light btn-sm text-info rounded-circle shadow-sm me-1" title="View Details"><i class="fas fa-eye"></i></a>
-                    
-                    @if(Context.Session.GetString("Role") == "FleetManager"){
-                        <a asp-action="UpdateVehicle" asp-route-id="@veh.vehicleId" class="btn btn-light btn-sm text-warning rounded-circle shadow-sm me-1" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a asp-action="Delete" asp-route-id="@veh.vehicleId" class="btn btn-light btn-sm text-danger rounded-circle shadow-sm" title="Delete"><i class="fas fa-trash"></i></a>
-                    }
-                </td>
+                        <td class="text-end pe-4 py-3">
+                            <a asp-action="GetVehicleDetails" asp-route-id="@veh.vehicleId" class="btn btn-light btn-sm text-info rounded-circle shadow-sm me-1" title="View Details"><i class="fas fa-eye"></i></a>
+    
+                            @if (Context.Session.GetString("Role") == "FleetManager")
+                            {
+                                <a asp-action="UpdateVehicle" asp-route-id="@veh.vehicleId" class="btn btn-light btn-sm text-warning rounded-circle shadow-sm me-1" title="Edit"><i class="fas fa-edit"></i></a>
+        
+                                <form asp-action="ToggleVehicleStatus" asp-route-id="@veh.vehicleId" method="post" class="d-inline">
+                                    @if (isOnRoute)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm rounded shadow-sm" disabled title="Currently on a trip">On Trip</button>
+                                    }
+                                    else if (veh.vehiclestatus.ToString() == "ACTIVE")
+                                    {
+                                        <button type="submit" class="btn btn-danger btn-sm rounded shadow-sm" onclick="return confirm('Disable this vehicle? It cannot be used for new trips.');">Disable</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="btn btn-success btn-sm rounded shadow-sm">Enable</button>
+                                    }
+                                </form>
+                            }
+                        </td>
             </tr>
             }
             @if(!Model.Any()){<tr><td colspan="6" class="text-center text-muted py-5">No vehicles found.</td></tr>}
